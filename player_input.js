@@ -8,45 +8,14 @@ function setupTips() {
 }
 
 function setupPlayerInput() {
-    function movePlayer(x = 0, y = 0) {
-        console.log(x, y);
-        let player = document.getElementsByClassName("player")[0];
-        const bounds = player.getBoundingClientRect();
-        player.style.top = (bounds.y + y) + "px";
-        player.style.left = (bounds.x + x) + "px";
-    }
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener("keyup", (e) => {
         let matched = false;
         checkInput: for (const input of Object.keys(PlayerInputs)) {
             const codes = PlayerInputs[input];
 
             for (const code of codes) {
                 if (e.code === code) {
-                    // console.log("code " + code);
-                    /*
-                    console.log(Object.values(PlayerInputs.Jump));
-                    console.log("jump " + PlayerInputs.Jump);
-                    */
-                    if (PlayerInputs.Jump.includes(code)) {
-                        console.log("jumpable");
-                    } else if (PlayerInputs.MoveLeft.includes(code)) {
-                        console.log("left");
-                    } else if (PlayerInputs.MoveRight.includes(code)) {
-                        console.log("right");
-                    } else if (PlayerInputs.Reset.includes(code)) {
-                        console.log("reset");
-                    } else if (PlayerInputs.SwitchWeapon.includes(code)) {
-                        console.log("switch weapon");
-                    } else if (PlayerInputs.DebugLeft.includes(code)) {
-                        movePlayer(-5, 0);
-                    } else if (PlayerInputs.DebugRight.includes(code)) {
-                        movePlayer(5, 0);
-                    } else if (PlayerInputs.DebugUp.includes(code)) {
-                        movePlayer(0, -5);
-                    } else if (PlayerInputs.DebugDown.includes(code)) {
-                        movePlayer(0, 5);
-                    }
-
+                    PlayerInputsController[input] = false;
                     matched = true;
                     break checkInput;
                 }
@@ -56,4 +25,61 @@ function setupPlayerInput() {
             console.log(e.code);
         }
     });
+
+    document.addEventListener("keydown", (e) => {
+        let matched = false;
+        checkInput: for (const input of Object.keys(PlayerInputs)) {
+            const codes = PlayerInputs[input];
+
+            for (const code of codes) {
+                if (e.code === code) {
+                    PlayerInputsController[input] = true;
+                    matched = true;
+                    break checkInput;
+                }
+            }
+        }
+        if (!matched) {
+            console.log(e.code);
+        }
+    });
+}
+
+function debugUpdateInput() {
+    function movePlayer(x = 0, y = 0) {
+        console.log(x, y);
+        let player = document.getElementsByClassName("player")[0];
+        const bounds = player.getBoundingClientRect();
+        player.style.top = (bounds.y + y) + "px";
+        player.style.left = (bounds.x + x) + "px";
+    }
+
+    if (PlayerInputsController.Jump) {
+        console.log("jumpable");
+    }
+    if (PlayerInputsController.MoveLeft) {
+        console.log("left");
+    }
+    if (PlayerInputsController.MoveRight) {
+        console.log("right");
+    } 
+    if (PlayerInputsController.Reset) {
+        console.log("reset");
+    } 
+    if (PlayerInputsController.SwitchWeapon) {
+        console.log("switch weapon");
+    } 
+    // Debugging
+    if (PlayerInputsController.DebugLeft) {
+        movePlayer(-5, 0);
+    } 
+    if (PlayerInputsController.DebugRight) {
+        movePlayer(5, 0);
+    } 
+    if (PlayerInputsController.DebugUp) {
+        movePlayer(0, -5);
+    } 
+    if (PlayerInputsController.DebugDown) {
+        movePlayer(0, 5);
+    }
 }

@@ -18,6 +18,18 @@ const PlayerInputs = Object.freeze({
     SwitchWeapon: ["KeyS"]
 });
 
+const PlayerInputsController = {
+    Jump: false,
+    DebugLeft: false,
+    DebugRight: false,
+    DebugUp: false,
+    DebugDown: false,
+    MoveLeft: false,
+    MoveRight: false,
+    Reset: false,
+    SwitchWeapon: false
+};
+
 /// INPUT
 setupTips();
 setupPlayerInput();
@@ -29,3 +41,12 @@ for (let i = 0; i < 20; i++) {
     gridCell.innerHTML = i;
     grid.appendChild(gridCell);
 }
+
+// MAIN LOOP
+window.main = () => {
+    window.requestAnimationFrame(main);
+
+    debugUpdateInput();
+};
+
+main();
