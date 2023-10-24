@@ -1,7 +1,31 @@
+/*
+TODO:
+- Poll all types of necessary input; WAD, left click,
+-  S, Spacebar, R
+- Figure out how to split js code into multiple files
+- Add some css
+*/
 
-// Beginning of getting shooting input.
-document.addEventListener("click", (e) => {
-    let tips = document.getElementsByClassName("tips")[0];
-    tips.querySelector("p").innerHTML += "!";
-    console.log(e);
+const PlayerInputs = Object.freeze({
+    Jump: ["KeyW", "Space"],
+    DebugLeft: ["ArrowLeft"],
+    DebugRight: ["ArrowRight"],
+    DebugUp: ["ArrowUp"],
+    DebugDown: ["ArrowDown"],
+    MoveLeft: ["KeyA"],
+    MoveRight: ["KeyD"],
+    Reset: ["Backspace"],
+    SwitchWeapon: ["KeyS"]
 });
+
+/// INPUT
+setupTips();
+setupPlayerInput();
+
+// SETUP DEBUG GRID
+const grid = document.getElementsByClassName("test-grid")[0];
+for (let i = 0; i < 20; i++) {
+    const gridCell = document.createElement("div");
+    gridCell.innerHTML = i;
+    grid.appendChild(gridCell);
+}

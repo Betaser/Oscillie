@@ -1,0 +1,21 @@
+body {
+    overflow: hidden;
+}
+
+.player {
+    height: 15vh;
+    width: 7vw;
+    background-color: green;
+    position: absolute;
+}
+
+.test-grid {
+    display: grid;
+    height: 190vh;
+    width: 190vw;
+    grid-template-columns: auto auto auto auto;
+    gap: 10px;
+    background-color: lightblue;
+    position: absolute;
+    z-index: -1;
+}
