@@ -14,7 +14,7 @@ const PlayerInputs = Object.freeze({
     DebugDown: ["ArrowDown"],
     MoveLeft: ["KeyA"],
     MoveRight: ["KeyD"],
-    Reset: ["Backspace"],
+    Reset: ["KeyR", "Backspace"],
     SwitchWeapon: ["KeyS"]
 });
 
