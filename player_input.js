@@ -69,7 +69,8 @@ function debugUpdateInput() {
     if (PlayerInputsController.SwitchWeapon) {
         console.log("switch weapon");
     } 
-    // Debugging
+
+    // Movement
     if (PlayerInputsController.DebugLeft) {
         movePlayer(-5, 0);
     } 
