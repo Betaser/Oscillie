@@ -1,9 +1,6 @@
 /*
 TODO:
-- Poll all types of necessary input; WAD, left click,
--  S, Spacebar, R
-- Figure out how to split js code into multiple files
-- Add some css
+- Create a sinusoidally bouncing ball
 */
 
 const PlayerInputs = Object.freeze({
@@ -32,7 +29,7 @@ const PlayerInputsController = {
 
 /// INPUT
 setupTips();
-setupPlayerInput();
+setupInput();
 
 // SETUP DEBUG GRID
 const grid = document.getElementsByClassName("test-grid")[0];
@@ -48,40 +45,51 @@ function renderElement(element, position) {
     element.style.left = position.x + "px";
 }
 
-class Vector2 {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-    }
-    static fromBoundingRect(rect) {
-        let vector = new Vector2(rect.x, rect.y);
-        return vector;
-    }
-}
-
-class Player {
-    // Element is like document.getElementsByClassName("...")[0]
-    constructor(element, position = null) {
-        this.element = element;
-        this.position ??= Vector2.fromBoundingRect(element.getBoundingClientRect());
-    }
-    render() {
-        renderElement(this.element, this.position);
-    }
+// Both calls addEntity and puts the node into the DOM
+function loadEntity(entity) {
+    addEntity(entity);
+    document.body.appendChild(entity.element);
 }
 
 const player = new Player(document.getElementsByClassName("player")[0]);
+addEntity(player);
+
+const ballElement = document.createElement("div");
+ballElement.className = "oscillating-ball";
+const ball = new OscillatingBall(ballElement, new Vector2(50, 200));
+loadEntity(ball);
 
 // UPDATE LOOP
+let frames = 0;
+
+let fps = 60;
+let displayFrameInterval = fps / 2;
+let fpsInterval = 1000 / fps;
+let prevTime = Date.now();
+let prevDisplayTime = Date.now();
+let startTime = prevTime;
+let now, elapsed, elapsedDisplay;
+
 function update() {
     requestAnimationFrame(update);
-    debugUpdateInput();
 
-    if (PlayerInputsController.MoveRight) {
-        player.position.x += 5;
-    }
-    if (PlayerInputsController.MoveLeft) {
-        player.position.x -= 5;
+    now = Date.now();
+    elapsed = now - prevTime;
+
+    if (elapsed > fpsInterval) {
+        prevTime = now - (elapsed % fpsInterval);
+
+        debugUpdateInput();
+        updateEntities(frames);
+        frames++;
+
+        if (frames % displayFrameInterval === 0) {
+            elapsedDisplay = now - prevDisplayTime;
+            prevDisplayTime = now - (elapsedDisplay % displayFrameInterval);
+            console.log("elapsedDisplay " + elapsedDisplay);
+            const currentFps = 1000 / ( elapsedDisplay / displayFrameInterval);
+            document.getElementsByClassName("fps")[0].innerHTML = "FPS: " + currentFps;
+        }
     }
 }
 
@@ -90,7 +98,7 @@ update();
 // RENDERING LOOP (RUNS ASYNCHRONOUSLY)
 function updateRender() {
     requestAnimationFrame(updateRender);
-    player.render();
+    updateRenderEntities(frames);
 }
 
 updateRender();

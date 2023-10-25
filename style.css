@@ -2,6 +2,20 @@ body {
     overflow: hidden;
 }
 
+.fps {
+    padding-left: 20px;
+    padding-top: 10px;
+    color: purple;
+    position: absolute; 
+}
+
+.oscillating-ball {
+    height: 10vh;
+    width: 10vh;
+    background-color: orange;
+    position: absolute;
+}
+
 .player {
     height: 15vh;
     width: 7vw;

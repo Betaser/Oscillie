@@ -7,7 +7,7 @@ function setupTips() {
     });
 }
 
-function setupPlayerInput() {
+function setupInput() {
     document.addEventListener("keyup", (e) => {
         let matched = false;
         checkInput: for (const input of Object.keys(PlayerInputs)) {
@@ -48,10 +48,8 @@ function setupPlayerInput() {
 function debugUpdateInput() {
     function movePlayer(x = 0, y = 0) {
         console.log(x, y);
-        let player = document.getElementsByClassName("player")[0];
-        const bounds = player.getBoundingClientRect();
-        player.style.top = (bounds.y + y) + "px";
-        player.style.left = (bounds.x + x) + "px";
+        player.position.x += x;
+        player.position.y += y;
     }
 
     if (PlayerInputsController.Jump) {

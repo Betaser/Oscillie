@@ -1,13 +1,25 @@
 const entities = [];
+const toRemove = [];
 
-function updateEntities() {
+function addEntity(entity) {
+    entities.push(entity);
+}
+
+function removeEntity(entity) {
+    toRemove.push(entity);
+}
+
+function updateEntities(frames) {
     for (const entity of entities) {
-        // entity.update();
+        if (toRemove.includes(entity)) continue;
+
+        entity.update(frames);
     }
 }
 
-function updateRenderEntities() {
+function updateRenderEntities(frames) {
     for (const entity of entities) {
-        // set the bounds
+        // set the css bounds
+        entity.render(frames);
     }
 }
