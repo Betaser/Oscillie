@@ -32,11 +32,15 @@ setupTips();
 setupInput();
 
 // SETUP DEBUG GRID
-const grid = document.getElementsByClassName("test-grid")[0];
+const grid = getElement("test-grid");
 for (let i = 0; i < 20; i++) {
     const gridCell = document.createElement("div");
     gridCell.innerHTML = i;
     grid.appendChild(gridCell);
+}
+
+function getElement(uniqueClassName) {
+    return document.getElementsByClassName(uniqueClassName)[0];
 }
 
 // For now, only position is updated. This is a helper function, which does not need to be used but is nice and simple.
@@ -51,7 +55,7 @@ function loadEntity(entity) {
     document.body.appendChild(entity.element);
 }
 
-const player = new Player(document.getElementsByClassName("player")[0]);
+const player = new Player(getElement("player"));
 addEntity(player);
 
 const ballElement = document.createElement("div");
@@ -62,13 +66,26 @@ loadEntity(ball);
 // UPDATE LOOP
 let frames = 0;
 
+/*
 let fps = 60;
 let displayFrameInterval = fps / 2;
 let fpsInterval = 1000 / fps;
 let prevTime = Date.now();
 let prevDisplayTime = Date.now();
 let startTime = prevTime;
+*/
+let fps, displayFrameInterval, fpsInterval, prevTime, prevDisplayTime, startTime;
 let now, elapsed, elapsedDisplay;
+
+function initFps(fpsValue) {
+    fps = fpsValue;
+    displayFrameInterval = fps / 2;
+    fpsInterval = 1000 / fps;
+    prevTime = Date.now();
+    prevDisplayTime = Date.now();
+    startTime = prevTime;
+}
+initFps(60);
 
 function update() {
     requestAnimationFrame(update);
@@ -86,9 +103,8 @@ function update() {
         if (frames % displayFrameInterval === 0) {
             elapsedDisplay = now - prevDisplayTime;
             prevDisplayTime = now - (elapsedDisplay % displayFrameInterval);
-            console.log("elapsedDisplay " + elapsedDisplay);
             const currentFps = 1000 / ( elapsedDisplay / displayFrameInterval);
-            document.getElementsByClassName("fps")[0].innerHTML = "FPS: " + currentFps;
+            getElement("fps").innerHTML = "FPS: " + currentFps;
         }
     }
 }
