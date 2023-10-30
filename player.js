@@ -31,11 +31,15 @@ class Player {
             this.position.y = maxY;
         }
 
+        // 476.8
+        console.log(groundLevel);
+
         // TODO: Collision detection
     }
 
     render() {
         renderElement(this.element, this.position);
+        /*
         // this.bounds.set(Polygon.fromBoundingRect(element.getBoundingClientRect()));
 
         // Choosing to render the bounds as well, as a wireframe
@@ -47,5 +51,6 @@ class Player {
         ctx.moveTo(pt1.x, pt1.y);
         ctx.lineTo(pt2.x, pt2.y);
         ctx.stroke();
+        */
     }
 }
