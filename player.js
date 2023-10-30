@@ -1,11 +1,14 @@
 class Player {
-    // Element is like document.getElementsByClassName("...")[0]
+
+    // element is like document.getElementsByClassName("...")[0]
     constructor(element, position = null) {
         this.element = element;
         this.position = position;
         this.position ??= Vector2.fromBoundingRect(element.getBoundingClientRect());
+        this.bounds = Polygon.fromBoundingRect(element.getBoundingClientRect());
         this.velocity = new Vector2(0, 0);
     }
+
     update() {
         if (PlayerInputsController.MoveRight) {
             player.position.x += 5;
@@ -27,10 +30,22 @@ class Player {
             this.velocity.y = 0;
             this.position.y = maxY;
         }
-        
+
         // TODO: Collision detection
     }
+
     render() {
         renderElement(this.element, this.position);
+        // this.bounds.set(Polygon.fromBoundingRect(element.getBoundingClientRect()));
+
+        // Choosing to render the bounds as well, as a wireframe
+        const pt1 = this.bounds.points[0];
+        const pt2 = this.bounds.points[1];
+        const canvas = document.getElementById("default-entities-layer");
+        let ctx = canvas.getContext("2d");
+        ctx.beginPath();
+        ctx.moveTo(pt1.x, pt1.y);
+        ctx.lineTo(pt2.x, pt2.y);
+        ctx.stroke();
     }
 }

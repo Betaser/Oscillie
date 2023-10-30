@@ -7,6 +7,11 @@
         <title>Oscillie</title>
     </head>
     <body>
+        <div class="layer">
+            <canvas id="default-entities-layer" style="z-index: -1;" />
+        </div>
+        <div id="screen-rect" class="expanding-rect"></div>
+
         <div class="tips">
             <p>Check out the console for interactivity</p>
         </div>
@@ -14,6 +19,7 @@
         <div class="test-grid"></div>
         <div class="player"></div>
         <div class="ground"></div>
+
         <p class="fps">fps: </div>
 
         <script src="math.js"></script>

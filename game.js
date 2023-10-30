@@ -66,14 +66,6 @@ loadEntity(ball);
 // UPDATE LOOP
 let frames = 0;
 
-/*
-let fps = 60;
-let displayFrameInterval = fps / 2;
-let fpsInterval = 1000 / fps;
-let prevTime = Date.now();
-let prevDisplayTime = Date.now();
-let startTime = prevTime;
-*/
 let fps, displayFrameInterval, fpsInterval, prevTime, prevDisplayTime, startTime;
 let now, elapsed, elapsedDisplay;
 
@@ -97,8 +89,14 @@ function update() {
         prevTime = now - (elapsed % fpsInterval);
 
         debugUpdateInput();
+
         updateEntities(frames);
         frames++;
+
+        const canvas = document.getElementById("default-entities-layer");
+        const screenRectangle = document.getElementById("screen-rect").getBoundingClientRect();
+        canvas.width = screenRectangle.width;
+        canvas.height = screenRectangle.height;
 
         if (frames % displayFrameInterval === 0) {
             elapsedDisplay = now - prevDisplayTime;
