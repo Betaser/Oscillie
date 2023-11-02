@@ -45,11 +45,13 @@ function setupInput() {
     });
 }
 
+let debugBounds = false;
 function debugUpdateInput() {
-    function movePlayer(x = 0, y = 0) {
-        console.log(x, y);
-        player.position.x += x;
-        player.position.y += y;
+    // Visual debugging
+    if (PlayerInputsController.DebugBounds) {
+        debugBounds = true;
+    } else {
+        debugBounds = false;
     }
 
     if (PlayerInputsController.Jump) {
@@ -67,6 +69,12 @@ function debugUpdateInput() {
     if (PlayerInputsController.SwitchWeapon) {
         console.log("switch weapon");
     } 
+
+    function movePlayer(x = 0, y = 0) {
+        console.log(x, y);
+        player.position.x += x;
+        player.position.y += y;
+    }
 
     // Movement
     if (PlayerInputsController.DebugLeft) {

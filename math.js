@@ -4,7 +4,10 @@ class Polygon {
     }
 
     set(polygon) {
-        this.points = polygon.points;
+        this.points = [];
+        for (const point of polygon.points) {
+            this.points.push(point);
+        }
     }
 
     static fromBoundingRect(rect) {

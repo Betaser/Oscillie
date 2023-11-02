@@ -9,29 +9,24 @@ const PlayerInputs = Object.freeze({
     DebugRight: ["ArrowRight"],
     DebugUp: ["ArrowUp"],
     DebugDown: ["ArrowDown"],
+    DebugBounds: ["KeyB"],
+    DebugTurnOffGravity: ["KeyG"],
     MoveLeft: ["KeyA"],
     MoveRight: ["KeyD"],
     Reset: ["KeyR", "Backspace"],
     SwitchWeapon: ["KeyS"]
 });
 
-const PlayerInputsController = {
-    Jump: false,
-    DebugLeft: false,
-    DebugRight: false,
-    DebugUp: false,
-    DebugDown: false,
-    MoveLeft: false,
-    MoveRight: false,
-    Reset: false,
-    SwitchWeapon: false
-};
+const PlayerInputsController = Object.assign({}, PlayerInputs);
+for (const action of Object.keys(PlayerInputsController)) {
+    PlayerInputsController[action] = false;
+}
 
 /// INPUT
 setupTips();
 setupInput();
 
-// SETUP DEBUG GRID
+/// SETUP DEBUG GRID
 const grid = getElement("test-grid");
 for (let i = 0; i < 20; i++) {
     const gridCell = document.createElement("div");
@@ -109,10 +104,15 @@ function update() {
 
 update();
 
+let renderBounds = true;
+
 // RENDERING LOOP (RUNS ASYNCHRONOUSLY)
 function updateRender() {
     requestAnimationFrame(updateRender);
     updateRenderEntities(frames);
+    if (renderBounds) {
+        updateRenderBoundsEntities(frames);
+    }
 }
 
 updateRender();

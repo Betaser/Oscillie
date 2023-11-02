@@ -11,46 +11,54 @@ class Player {
 
     update() {
         if (PlayerInputsController.MoveRight) {
-            player.position.x += 5;
+            this.velocity.x += 1;
         }
         if (PlayerInputsController.MoveLeft) {
-            player.position.x -= 5;
+            this.velocity.x -= 1;
         }
         
-        // Gravity
-        this.velocity.add(new Vector2(0, 0.25));
-        this.position.add(this.velocity);
+        if (!PlayerInputsController.DebugTurnOffGravity) {
+            // Gravity
+            this.velocity.add(new Vector2(0, 0.25));
+            this.position.add(this.velocity);
 
-        // Pretend there's ground  
-        const ground = getElement("ground");
-        const groundLevel = ground.getBoundingClientRect().top;
-        const playerHeight = this.element.getBoundingClientRect().height;
-        const maxY = groundLevel - playerHeight;
-        if (this.position.y > maxY) {
-            this.velocity.y = 0;
-            this.position.y = maxY;
+            // Pretend there's ground  
+            // With this pretend ground, apply major friction.
+            const ground = getElement("ground");
+            const groundLevel = ground.getBoundingClientRect().top;
+            const playerHeight = this.element.getBoundingClientRect().height;
+            const maxY = groundLevel - playerHeight;
+            if (this.position.y > maxY) {
+                this.velocity.y = 0;
+                this.position.y = maxY;
+
+                this.velocity.x /= 1.2;
+            }
         }
-
-        // 476.8
-        console.log(groundLevel);
 
         // TODO: Collision detection
     }
 
-    render() {
-        renderElement(this.element, this.position);
-        /*
-        // this.bounds.set(Polygon.fromBoundingRect(element.getBoundingClientRect()));
-
-        // Choosing to render the bounds as well, as a wireframe
-        const pt1 = this.bounds.points[0];
-        const pt2 = this.bounds.points[1];
+    renderBounds() {
+        // Choosing to render the bounds as well, as a wireframe.
         const canvas = document.getElementById("default-entities-layer");
         let ctx = canvas.getContext("2d");
-        ctx.beginPath();
-        ctx.moveTo(pt1.x, pt1.y);
-        ctx.lineTo(pt2.x, pt2.y);
-        ctx.stroke();
-        */
+        // This is the total width, therefore set to nice even values for clean lines.
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = `rgb(255, 0, 0)`;
+        for (let i = 0; i < this.bounds.points.length; i++) {
+            const pt1 = this.bounds.points[i];
+            const pt2 = this.bounds.points[(i + 1) % this.bounds.points.length];
+            ctx.beginPath();
+            ctx.moveTo(Math.floor(pt1.x), Math.floor(pt1.y));
+            ctx.lineTo(Math.floor(pt2.x), Math.floor(pt2.y));
+            ctx.stroke();
+        }
+    }
+
+    render() {
+        renderElement(this.element, this.position);
+
+        this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
     }
 }

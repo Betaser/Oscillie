@@ -23,3 +23,12 @@ function updateRenderEntities(frames) {
         entity.render(frames);
     }
 }
+
+function updateRenderBoundsEntities(frames) {
+    for (const entity of entities) {
+        // Lazy, since this is for debugging anyways.
+        if (entity.renderBounds !== undefined) {
+            entity.renderBounds(frames);
+        }
+    }
+}
