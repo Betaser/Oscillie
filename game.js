@@ -38,18 +38,50 @@ function getElement(uniqueClassName) {
     return document.getElementsByClassName(uniqueClassName)[0];
 }
 
-// For now, only position is updated. This is a helper function, which does not need to be used but is nice and simple.
-function renderElement(element, position) {
-    element.style.top = position.y + "px";
-    element.style.left = position.x + "px";
+function getUnits(unitsType="px") {
+    switch (unitsType) {
+        case "px": return ["px", "px"];
+        case "v": return ["vw", "vh"];
+    }
+    return "px";
 }
-
 // Both calls addEntity and puts the node into the DOM
 function loadEntity(entity) {
     addEntity(entity);
     document.body.appendChild(entity.element);
 }
 
+function renderElementSize(element, size, units="px") {
+    units = getUnits(units);
+    element.style.width = size.x + units[0];
+    element.style.height = size.y + units[1];
+}
+
+// For now, only position is updated. This is a helper function, which does not need to be used but is nice and simple.
+function renderElement(element, position, units="px") {
+    units = getUnits(units);
+    element.style.left = position.x + units[0];
+    element.style.top = position.y + units[1];
+}
+
+function renderElementBounds(bounds, colorString=`rgb(255, 0, 0)`) {
+    // Choosing to render the bounds as well, as a wireframe.
+    const canvas = document.getElementById("default-entities-layer");
+    let ctx = canvas.getContext("2d");
+    // This is the total width, therefore set to nice even values for clean lines.
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = colorString;
+    for (let i = 0; i < bounds.points.length; i++) {
+        const pt1 = bounds.points[i];
+        const pt2 = bounds.points[(i + 1) % bounds.points.length];
+        ctx.beginPath();
+        ctx.moveTo(Math.floor(pt1.x), Math.floor(pt1.y));
+        ctx.lineTo(Math.floor(pt2.x), Math.floor(pt2.y));
+        ctx.stroke();
+    }
+}
+
+/// SETUP ENTITIES
 const player = new Player(getElement("player"));
 addEntity(player);
 
@@ -58,7 +90,23 @@ ballElement.className = "oscillating-ball";
 const ball = new OscillatingBall(ballElement, new Vector2(50, 200));
 loadEntity(ball);
 
-// UPDATE LOOP
+// Create mound
+{
+    const positionsAndSizes = [
+        [new Vector2(60, 60), new Vector2(10, 10)],
+        [new Vector2(70, 62), new Vector2(10, 8)],
+        [new Vector2(80, 58), new Vector2(10, 12)],
+    ];
+    for (const [position, size] of positionsAndSizes) {
+        const moundElement = document.createElement("div");
+        moundElement.className = "mound";
+        const mound = Mound.MakeDiv(position, size);
+        // Mound calls document.body.appendChild so that it can get its own boundingClientRect in its constructor
+        addEntity(mound);
+    }
+}
+
+/// UPDATE LOOP
 let frames = 0;
 
 let fps, displayFrameInterval, fpsInterval, prevTime, prevDisplayTime, startTime;

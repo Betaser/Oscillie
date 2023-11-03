@@ -17,6 +17,13 @@ body {
     background-color: rgb(40, 200, 40, 0.5);
 }
 
+.mound {
+    position: absolute;
+    background-color: coral;
+    width: 10vw;
+    height: 10vh;
+}
+
 .layer {
     position: absolute;
     left: 0px;

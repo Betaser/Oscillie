@@ -45,13 +45,15 @@ function setupInput() {
     });
 }
 
-let debugBounds = false;
+let pressedRenderBounds = false;
 function debugUpdateInput() {
-    // Visual debugging
-    if (PlayerInputsController.DebugBounds) {
-        debugBounds = true;
-    } else {
-        debugBounds = false;
+    // Visual debugging with a ugly one-time-use (so far) of toggling an input.
+    if (!pressedRenderBounds && PlayerInputsController.DebugBounds) {
+        renderBounds = !renderBounds;
+        pressedRenderBounds = true;
+    }
+    if (pressedRenderBounds && !PlayerInputsController.DebugBounds) {
+        pressedRenderBounds = false;
     }
 
     if (PlayerInputsController.Jump) {
