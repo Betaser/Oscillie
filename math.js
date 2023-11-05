@@ -6,8 +6,18 @@ class Polygon {
     set(polygon) {
         this.points = [];
         for (const point of polygon.points) {
-            this.points.push(point);
+            this.points.push(point.clone());
         }
+    }
+
+    clone() {
+        let polygon = new Polygon();
+        polygon.points = [];
+        for (const point of this.points) {
+            polygon.points.push(point);
+        }
+        // polygon.set(this);
+        return polygon;
     }
 
     static fromBoundingRect(rect) {
@@ -18,6 +28,7 @@ class Polygon {
             new Vector2(rect.x, rect.y + rect.height)
         ]);
     }
+
 }
 
 class Vector2 {
@@ -36,11 +47,11 @@ class Vector2 {
     }
 
     plus(vector2) {
-        return new Vector2(this.x + vector2.x, this.x + vector2.y);
+        return new Vector2(this.x + vector2.x, this.y + vector2.y);
     } 
 
     minus(vector2) {
-        return new Vector2(this.x - vector2.x, this.x - vector2.y);
+        return new Vector2(this.x - vector2.x, this.y - vector2.y);
     }
 
     add(vector2) {

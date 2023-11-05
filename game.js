@@ -11,6 +11,7 @@ const PlayerInputs = Object.freeze({
     DebugDown: ["ArrowDown"],
     DebugBounds: ["KeyB"],
     DebugTurnOffGravity: ["KeyG"],
+    DebugCollision: ["KeyC"],
     MoveLeft: ["KeyA"],
     MoveRight: ["KeyD"],
     Reset: ["KeyR", "Backspace"],
@@ -20,6 +21,16 @@ const PlayerInputs = Object.freeze({
 const PlayerInputsController = Object.assign({}, PlayerInputs);
 for (const action of Object.keys(PlayerInputsController)) {
     PlayerInputsController[action] = false;
+}
+
+const LastPlayerInputs = Object.assign({}, PlayerInputs);
+for (const action of Object.keys(LastPlayerInputs)) {
+    LastPlayerInputs[action] = false;
+}
+
+const PlayerInputsControllerKeyDown = Object.assign({}, PlayerInputs);
+for (const action of Object.keys(PlayerInputsController)) {
+    PlayerInputsControllerKeyDown[action] = false;
 }
 
 /// INPUT
@@ -131,7 +142,7 @@ function update() {
     if (elapsed > fpsInterval) {
         prevTime = now - (elapsed % fpsInterval);
 
-        debugUpdateInput();
+        updateInput();
 
         updateEntities(frames);
         frames++;
@@ -154,7 +165,7 @@ update();
 
 let renderBounds = true;
 
-// RENDERING LOOP (RUNS ASYNCHRONOUSLY)
+/// RENDERING LOOP (RUNS ASYNCHRONOUSLY)
 function updateRender() {
     requestAnimationFrame(updateRender);
     updateRenderEntities(frames);

@@ -1,4 +1,14 @@
 /// INPUT
+let mouseX = 0;
+let mouseY = 0;
+let mousePosition = new Vector2(mouseX, mouseY);
+onmousemove = (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    mousePosition.x = mouseX;
+    mousePosition.y = mouseY;
+};
+
 function setupTips() {
     document.addEventListener("click", (e) => {
         let tips = document.getElementsByClassName("tips")[0];
@@ -45,15 +55,19 @@ function setupInput() {
     });
 }
 
-let pressedRenderBounds = false;
-function debugUpdateInput() {
-    // Visual debugging with a ugly one-time-use (so far) of toggling an input.
-    if (!pressedRenderBounds && PlayerInputsController.DebugBounds) {
-        renderBounds = !renderBounds;
-        pressedRenderBounds = true;
+function updateInput() {
+    // Proper way to toggle an input.
+    for (const input of Object.keys(PlayerInputsController)) {
+        PlayerInputsControllerKeyDown[input] = (!LastPlayerInputs[input] && PlayerInputsController[input]);
+        LastPlayerInputs[input] = PlayerInputsController[input];
     }
-    if (pressedRenderBounds && !PlayerInputsController.DebugBounds) {
-        pressedRenderBounds = false;
+
+    // Debugging toggling if checks go here.
+    if (PlayerInputsControllerKeyDown.DebugBounds) {
+        renderBounds = !renderBounds;
+    }
+    if (PlayerInputsControllerKeyDown.DebugCollision) {
+        renderCollision = !renderCollision; 
     }
 
     if (PlayerInputsController.Jump) {
@@ -65,10 +79,10 @@ function debugUpdateInput() {
     if (PlayerInputsController.MoveRight) {
         console.log("right");
     } 
-    if (PlayerInputsController.Reset) {
+    if (PlayerInputsControllerKeyDown.Reset) {
         console.log("reset");
     } 
-    if (PlayerInputsController.SwitchWeapon) {
+    if (PlayerInputsControllerKeyDown.SwitchWeapon) {
         console.log("switch weapon");
     } 
 

@@ -67,6 +67,15 @@ body {
     position: absolute;
 }
 
+/* Don't inherit from player because the bounding
+    box gets messed up. */
+.player.collision-ghost {
+    display: none;
+    /*visibility: hidden;*/
+    z-index: 2;
+    opacity: 0.6;
+}
+
 .test-grid {
     top: 0;
     left: 0;
