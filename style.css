@@ -5,6 +5,7 @@ body {
 }
 
 .canvas {
+    z-index: 1;
     position: absolute;
 }
 
@@ -67,11 +68,15 @@ body {
     position: absolute;
 }
 
-/* Don't inherit from player because the bounding
-    box gets messed up. */
+.player.collided-ghost {
+    display: none;
+    z-index: 3;
+    opacity: 0.6;
+    background-color: orange;
+}
+
 .player.collision-ghost {
     display: none;
-    /*visibility: hidden;*/
     z-index: 2;
     opacity: 0.6;
 }

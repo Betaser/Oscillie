@@ -85,7 +85,6 @@ function renderElementBounds(bounds, colorString=`rgb(255, 0, 0)`) {
     for (let i = 0; i < bounds.points.length; i++) {
         const pt1 = bounds.points[i];
         const pt2 = bounds.points[(i + 1) % bounds.points.length];
-        ctx.beginPath();
         ctx.moveTo(Math.floor(pt1.x), Math.floor(pt1.y));
         ctx.lineTo(Math.floor(pt2.x), Math.floor(pt2.y));
         ctx.stroke();
@@ -101,7 +100,7 @@ ballElement.className = "oscillating-ball";
 const ball = new OscillatingBall(ballElement, new Vector2(50, 200));
 loadEntity(ball);
 
-// Create mound
+// Create mounds
 {
     const positionsAndSizes = [
         [new Vector2(60, 60), new Vector2(10, 10)],
@@ -147,10 +146,13 @@ function update() {
         updateEntities(frames);
         frames++;
 
-        const canvas = document.getElementById("default-entities-layer");
-        const screenRectangle = document.getElementById("screen-rect").getBoundingClientRect();
-        canvas.width = screenRectangle.width;
-        canvas.height = screenRectangle.height;
+        const layers = document.getElementById("layers");
+        for (const canvas of layers.getElementsByTagName("canvas")) {
+            const screenRectangle = document.getElementById("screen-rect").getBoundingClientRect();
+            canvas.width = screenRectangle.width;
+            canvas.height = screenRectangle.height;
+        }
+
 
         if (frames % displayFrameInterval === 0) {
             elapsedDisplay = now - prevDisplayTime;

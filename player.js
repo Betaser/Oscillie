@@ -1,13 +1,5 @@
 let renderCollision = false;
 
-class Ghost {
-    constructor(element, position, bounds) {
-        this.element = element;
-        this.position = position;
-        this.bounds = bounds;
-    }
-}
-
 class Player {
 
     // element is like document.getElementsByClassName("...")[0]
@@ -25,7 +17,15 @@ class Player {
         // Because we will be toggling this.
         ghostElement.style.display = getComputedStyle(ghostElement).getPropertyValue("display");
 
-        this.ghost = new Ghost(ghostElement, this.position.clone(), this.bounds.clone());
+        this.ghost = new Entity(ghostElement, this.position.clone(), this.bounds.clone());
+
+        // And for the collidedGhostElement (it's almost the exact same code).
+        const collidedGhostElement = getElement("player collided-ghost");
+        collidedGhostElement.style.display = getComputedStyle(collidedGhostElement).getPropertyValue("display");
+        this.collidedGhost = new Entity(collidedGhostElement, this.position.clone(), this.bounds.clone());
+
+        // For dirty rendering tests.
+        this.renderCalls = () => {};
     }
 
     update() {
@@ -41,12 +41,12 @@ class Player {
             this.velocity.add(new Vector2(0, 0.25));
         }
 
-        // Pretend there's ground  
+        // Pretend there's ground, and for collision detection reasons, float a little above it.
         // With this pretend ground, apply major friction.
         const ground = getElement("ground");
         const groundLevel = ground.getBoundingClientRect().top;
         const playerHeight = this.element.getBoundingClientRect().height;
-        const maxY = groundLevel - playerHeight;
+        const maxY = groundLevel - playerHeight - 10;
         if (this.position.y > maxY) {
             this.velocity.y = 0;
             this.position.y = maxY;
@@ -58,16 +58,52 @@ class Player {
 
         // TODO: Collision detection
         // AimOffset goes from the center of your bounding box.
-        renderCollision = PlayerInputsControllerKeyDown.DebugCollision;
-        if (renderCollision) {
-            const style = this.ghost.element.style;
-            console.log(this.ghost.element);
-            console.log(typeof(style.display));
-            if (style.display === "none") {
-                console.log("switch to block");
+        // The location the ghost is being set to is a temporary thing, until collision detection algorithsm are in testing phase.
+        const bounds = this.element.getBoundingClientRect();
+        const playerCenter = new Vector2(
+            (bounds.right - bounds.left) / 2,
+            (bounds.bottom - bounds.top) / 2
+        );
+
+        const cursorVelocity = mousePosition.minus(playerCenter);
+        this.setGhost();
+
+        const moundBounds = [];
+        for (const entity of entities) {
+            if (entity.element !== undefined && entity.element.className === "mound") {
+                moundBounds.push(entity.bounds);
             }
-            style.display = style.display === "none" ? "block" : "none";
-            console.log(style.display);
+        }
+
+        const collision = this.bounds.calcCollision(moundBounds, cursorVelocity);
+        if (collision === null) {
+            this.collidedGhost.position = cursorVelocity.minus(playerCenter);
+        } else {
+            this.collidedGhost.position = collision.intersection;
+
+            const [p1, p2] = collision.side;
+
+            this.renderCalls = () => {
+                if (!renderCollision) {
+                    return;
+                }
+                const canvas = document.getElementById("debug-layer");
+                let ctx = canvas.getContext("2d");
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = `rgb(0, 0, 255)`;
+                ctx.moveTo(Math.floor(p1.x), Math.floor(p1.y));
+                ctx.lineTo(Math.floor(p2.x), Math.floor(p2.y));
+                ctx.stroke();
+            };
+        }
+    }
+
+    setGhost() {
+        if (PlayerInputsControllerKeyDown.DebugCollision) {
+            const ghostStyle = this.ghost.element.style;
+            ghostStyle.display = ghostStyle.display === "none" ? "block" : "none";
+            const collidedStyle = this.collidedGhost.element.style;
+            collidedStyle.display = ghostStyle.display;
         }
 
         const bounds = this.element.getBoundingClientRect();
@@ -81,13 +117,19 @@ class Player {
     renderBounds() {
         renderElementBounds(this.bounds);
         renderElementBounds(this.ghost.bounds);
+        renderElementBounds(this.collidedGhost.bounds);
     }
 
     render() {
+        this.renderCalls();
+
         renderElement(this.element, this.position);
         this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
 
         renderElement(this.ghost.element, this.ghost.position);
         this.ghost.bounds.set(Polygon.fromBoundingRect(this.ghost.element.getBoundingClientRect()));
+
+        renderElement(this.collidedGhost.element, this.collidedGhost.position);
+        this.collidedGhost.bounds.set(Polygon.fromBoundingRect(this.collidedGhost.element.getBoundingClientRect()));
     }
 }

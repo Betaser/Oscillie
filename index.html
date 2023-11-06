@@ -7,9 +7,24 @@
         <title>Oscillie</title>
     </head>
     <body>
-        <div class="layer" style="z-index: 1;">
+        <div class="layer" id="layers" style="z-index: 1; position: absolute">
+            <div style="position: absolute;">
+            <canvas id="debug-layer" style="z-index: 2;" />
+            </div>
+            <div>
             <canvas id="default-entities-layer" style="z-index: 1;" />
+            </div>
         </div>
+        <!--
+        <div style="top: 30px;">
+            <div style="position: absolute;">
+                step 1
+            </div>
+            <div>
+                step 2!!!
+            </div>
+        </div>
+    -->
 
         <div id="screen-rect" class="expanding-rect"></div>
 
@@ -20,6 +35,7 @@
         <div class="test-grid"></div>
         <div class="player"></div>
         <div class="player collision-ghost"></div>
+        <div class="player collided-ghost"></div>
         <div class="ground"></div>
 
         <p class="fps">fps: </div>
