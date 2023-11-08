@@ -35,14 +35,24 @@ class Polygon {
     //  and the location the collision happened.
     // Probably want to also consider the sliding velocity, but this might not have
     //  to be a return value, could be another function.
-    calcCollision(polygons, velocity) {
+    calcCollision(polygons, velocity, renderCalls=[]) {
+        // Of course this isn't working with vertical lines, because slopeSolve won't work with that
+        //  at first.
         function slopeSolve(movingPoint, side) {
             class Line {
                 constructor(twoPoints) {
                     const [p1, p2] = twoPoints;
-                    this.m = (p2.y - p1.y) / (p1.x - p2.x);
+                    this.m = (p2.y - p1.y) / (p2.x - p1.x);
                     this.b = p1.y - this.m * p1.x;
                 }
+            }
+
+            // To deal with if side is vertical
+            if (Math.abs(side[0].x - side[1].x) / Math.abs(side[0].y - side[1].y) < 0.01) {
+                const movingPointLine = new Line(movingPoint);
+                const x = side[0].x;
+                const y = movingPointLine.m * x + movingPointLine.b;
+                return new Vector2(x, y);
             }
 
             const movingPointLine = new Line(movingPoint);
@@ -55,10 +65,26 @@ class Polygon {
 
         function boundingBoxVerify(intersectionFunc, movingPoint, side) {
             const intersection = intersectionFunc(movingPoint, side);
-            const minX = Math.min(movingPoint[0].x, movingPoint[1].x);
-            const maxX = Math.max(movingPoint[0].x, movingPoint[1].x);
+            function inBounds(lineSegment) {
+                const minX = Math.min(lineSegment[0].x, lineSegment[1].x);
+                const maxX = Math.max(lineSegment[0].x, lineSegment[1].x);
+                const minY = Math.min(lineSegment[0].y, lineSegment[1].y);
+                const maxY = Math.max(lineSegment[0].y, lineSegment[1].y);
+                return (minX <= intersection.x && intersection.x <= maxX)
+                    && (minY <= intersection.y && intersection.y <= maxY);
+            }
+            const interMinX = Math.min(movingPoint[0].x, movingPoint[1].x);
+            const interMaxX = Math.max(movingPoint[0].x, movingPoint[1].x);
+            const interMinY = Math.min(movingPoint[0].y, movingPoint[1].y);
+            const interMaxY = Math.max(movingPoint[0].y, movingPoint[1].y);
+            const sideMinX = Math.min(side[0].x, side[1].x);
+            const sideMaxX = Math.max(side[0].x, side[1].x);
+            const sideMinY = Math.min(side[0].y, side[1].y);
+            const sideMaxY = Math.max(side[0].y, side[1].y);
 
-            if (minX <= intersection.x && intersection.x <= maxX) {
+            // if (minX <= intersection.x && intersection.x <= maxX) {
+            // if (minY <= intersection.y && intersection.y <= maxY) {
+            if (inBounds(movingPoint) && inBounds(side)) {
                 return intersection;
             }
             return null;
@@ -71,17 +97,28 @@ class Polygon {
                 this.side = side;
             }
         }
-            
+
         let collisionDist = Infinity;
         let closestCollision = null;
-        // For now, try determining the closest side we are colliding with.
-        for (const polygon of polygons) {
-            const sides = polygon.getSides();
 
-            for (const side of sides) {
-                for (const point of this.points) {
-                    const movingPoint = [point, point.plus(velocity)];
+        for (const point of this.points) {
+            const movingPoint = [point, point.plus(velocity)];
+            renderCalls.push(() => {
+                const canvas = document.getElementById("debug-layer");
+                let ctx = canvas.getContext("2d");
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = `rgb(0, 255, 255)`;
+                ctx.beginPath();
+                ctx.moveTo(Math.floor(movingPoint[0].x), Math.floor(movingPoint[0].y));
+                ctx.lineTo(Math.floor(movingPoint[1].x), Math.floor(movingPoint[1].y));
+                ctx.stroke();
+            });
 
+            // For now, try determining the closest side we are colliding with.
+            for (const polygon of polygons) {
+                const sides = polygon.getSides();
+
+                for (const side of sides) {
                     // The most important part of the algorithm is figuring out where,
                     // and if, the side collides with the player.
                     const intersection = boundingBoxVerify(slopeSolve, movingPoint, side);
@@ -98,14 +135,32 @@ class Polygon {
             }
         }
 
+        if (closestCollision !== null) {
+            console.log(closestCollision.intersection.y);
+            renderCalls.push(() => {
+                const canvas = document.getElementById("debug-layer");
+                let ctx = canvas.getContext("2d");
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = `rgb(255, 255, 0)`;
+                ctx.beginPath();
+                ctx.rect(Math.floor(closestCollision.intersection.x) - 5, Math.floor(closestCollision.intersection.y) - 5,
+                        10, 10);
+                ctx.stroke();
+                ctx.strokeStyle = `rgb(255, 0, 0)`;
+                ctx.beginPath();
+                ctx.moveTo(Math.floor(closestCollision.point.x), Math.floor(closestCollision.point.y));
+                ctx.lineTo(Math.floor(closestCollision.point.x + velocity.x), Math.floor(closestCollision.point.y + velocity.y));
+                ctx.stroke();
+            });
+        }
         return closestCollision;
     }
 
     getSides() {
         let sides = [];
         for (let i = 0; i < this.points.length; i++) {
-            let p1 = this.points[i];
-            let p2 = this.points[(i + 1) % this.points.length];
+            const p1 = this.points[i];
+            const p2 = this.points[(i + 1) % this.points.length];
             sides.push([p1, p2]);
         }
         return sides;

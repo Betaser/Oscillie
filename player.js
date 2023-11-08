@@ -25,7 +25,7 @@ class Player {
         this.collidedGhost = new Entity(collidedGhostElement, this.position.clone(), this.bounds.clone());
 
         // For dirty rendering tests.
-        this.renderCalls = () => {};
+        this.renderCalls = [];
     }
 
     update() {
@@ -59,14 +59,20 @@ class Player {
         // TODO: Collision detection
         // AimOffset goes from the center of your bounding box.
         // The location the ghost is being set to is a temporary thing, until collision detection algorithsm are in testing phase.
+        this.renderCalls = [];
+
         const bounds = this.element.getBoundingClientRect();
         const playerCenter = new Vector2(
-            (bounds.right - bounds.left) / 2,
-            (bounds.bottom - bounds.top) / 2
+            bounds.left + (bounds.right - bounds.left) / 2,
+            bounds.top + (bounds.bottom - bounds.top) / 2
         );
 
         const cursorVelocity = mousePosition.minus(playerCenter);
         this.setGhost();
+
+        if (!renderCollision) {
+            return;
+        }
 
         const moundBounds = [];
         for (const entity of entities) {
@@ -75,26 +81,33 @@ class Player {
             }
         }
 
-        const collision = this.bounds.calcCollision(moundBounds, cursorVelocity);
+        const render = [];
+        const collision = this.bounds.calcCollision(moundBounds, cursorVelocity, render);
+        this.renderCalls.push(() => {
+            for (const call of render) {
+                call();
+            }
+        });
+
         if (collision === null) {
-            this.collidedGhost.position = cursorVelocity.minus(playerCenter);
+            this.collidedGhost.position = mousePosition.minus(playerCenter).minus(playerCenter);
         } else {
-            this.collidedGhost.position = collision.intersection;
+            const intersection = collision.intersection;
+            const toIntersection = intersection.minus(collision.point);
+            this.collidedGhost.position = this.position.plus(toIntersection);
 
             const [p1, p2] = collision.side;
 
-            this.renderCalls = () => {
-                if (!renderCollision) {
-                    return;
-                }
+            this.renderCalls.push(() => {
                 const canvas = document.getElementById("debug-layer");
                 let ctx = canvas.getContext("2d");
                 ctx.lineWidth = 4;
                 ctx.strokeStyle = `rgb(0, 0, 255)`;
+                ctx.beginPath();
                 ctx.moveTo(Math.floor(p1.x), Math.floor(p1.y));
                 ctx.lineTo(Math.floor(p2.x), Math.floor(p2.y));
                 ctx.stroke();
-            };
+            });
         }
     }
 
@@ -121,7 +134,9 @@ class Player {
     }
 
     render() {
-        this.renderCalls();
+        for (const render of this.renderCalls) {
+            render();
+        }
 
         renderElement(this.element, this.position);
         this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
