@@ -35,9 +35,9 @@ class Polygon {
     //  and the location the collision happened.
     // Probably want to also consider the sliding velocity, but this might not have
     //  to be a return value, could be another function.
+    // RenderCalls is like an optional out variable that you could totally ignore.
     calcCollision(polygons, velocity, renderCalls=[]) {
-        // Of course this isn't working with vertical lines, because slopeSolve won't work with that
-        //  at first.
+        // There is a hacky check for roughly vertical lines, to work with slope math.
         function slopeSolve(movingPoint, side) {
             class Line {
                 constructor(twoPoints) {
@@ -73,17 +73,7 @@ class Polygon {
                 return (minX <= intersection.x && intersection.x <= maxX)
                     && (minY <= intersection.y && intersection.y <= maxY);
             }
-            const interMinX = Math.min(movingPoint[0].x, movingPoint[1].x);
-            const interMaxX = Math.max(movingPoint[0].x, movingPoint[1].x);
-            const interMinY = Math.min(movingPoint[0].y, movingPoint[1].y);
-            const interMaxY = Math.max(movingPoint[0].y, movingPoint[1].y);
-            const sideMinX = Math.min(side[0].x, side[1].x);
-            const sideMaxX = Math.max(side[0].x, side[1].x);
-            const sideMinY = Math.min(side[0].y, side[1].y);
-            const sideMaxY = Math.max(side[0].y, side[1].y);
 
-            // if (minX <= intersection.x && intersection.x <= maxX) {
-            // if (minY <= intersection.y && intersection.y <= maxY) {
             if (inBounds(movingPoint) && inBounds(side)) {
                 return intersection;
             }
@@ -91,10 +81,11 @@ class Polygon {
         }
 
         class Collision {
-            constructor(intersection, point, side) {
+            constructor(intersection, point, side, invertedRaycast=false) {
                 this.intersection = intersection;
                 this.point = point;
                 this.side = side;
+                this.invertedRaycast = invertedRaycast;
             }
         }
 
@@ -135,8 +126,42 @@ class Polygon {
             }
         }
 
+        // Iteration with movingPoint being from the polygons to collide with.
+        for (const polygon of polygons) {
+            for (const point of polygon.points) {
+                const movingPoint = [point, point.minus(velocity)];
+
+                renderCalls.push(() => {
+                    const canvas = document.getElementById("debug-layer");
+                    let ctx = canvas.getContext("2d");
+                    ctx.lineWidth = 6;
+                    ctx.strokeStyle = `rgb(0, 255, 155)`;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.floor(movingPoint[0].x), Math.floor(movingPoint[0].y));
+                    ctx.lineTo(Math.floor(movingPoint[1].x), Math.floor(movingPoint[1].y));
+                    ctx.stroke();
+                });
+
+                const sides = this.getSides();
+
+                for (const side of sides) {
+                    // The most important part of the algorithm is figuring out where,
+                    // and if, the side collides with the player.
+                    const intersection = boundingBoxVerify(slopeSolve, movingPoint, side);
+                    if (intersection === null) {
+                        continue;
+                    }
+
+                    const dist = intersection.minus(point).mag();
+                    if (dist < collisionDist) {
+                        collisionDist = dist;
+                        closestCollision = new Collision(intersection, point, side, true);
+                    }
+                }
+            }
+        }
+
         if (closestCollision !== null) {
-            console.log(closestCollision.intersection.y);
             renderCalls.push(() => {
                 const canvas = document.getElementById("debug-layer");
                 let ctx = canvas.getContext("2d");
@@ -148,8 +173,14 @@ class Polygon {
                 ctx.stroke();
                 ctx.strokeStyle = `rgb(255, 0, 0)`;
                 ctx.beginPath();
-                ctx.moveTo(Math.floor(closestCollision.point.x), Math.floor(closestCollision.point.y));
-                ctx.lineTo(Math.floor(closestCollision.point.x + velocity.x), Math.floor(closestCollision.point.y + velocity.y));
+                let start = closestCollision.point;
+                let end = closestCollision.invertedRaycast 
+                    ? start.minus(velocity) 
+                    : start.plus(velocity);
+                ctx.moveTo(Math.floor(start.x), Math.floor(start.y));
+                // ctx.moveTo(Math.floor(closestCollision.point.x), Math.floor(closestCollision.point.y));
+                ctx.lineTo(Math.floor(end.x), Math.floor(end.y));
+                // ctx.lineTo(Math.floor(closestCollision.point.x + velocity.x), Math.floor(closestCollision.point.y + velocity.y));
                 ctx.stroke();
             });
         }

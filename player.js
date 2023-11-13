@@ -94,7 +94,9 @@ class Player {
         } else {
             const intersection = collision.intersection;
             const toIntersection = intersection.minus(collision.point);
-            this.collidedGhost.position = this.position.plus(toIntersection);
+            this.collidedGhost.position = collision.invertedRaycast 
+                ? this.position.minus(toIntersection)
+                : this.position.plus(toIntersection);
 
             const [p1, p2] = collision.side;
 
