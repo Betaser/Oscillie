@@ -28,6 +28,10 @@ class Player {
         this.renderCalls = [];
     }
 
+    moveWithCollision() {
+        // As you hold du
+    }
+
     update() {
         if (PlayerInputsController.MoveRight) {
             this.velocity.x += 1;
@@ -57,40 +61,32 @@ class Player {
         this.position.add(this.velocity);
 
         // TODO: Collision detection
-        // AimOffset goes from the center of your bounding box.
         // The location the ghost is being set to is a temporary thing, until collision detection algorithsm are in testing phase.
         this.renderCalls = [];
 
         const bounds = this.element.getBoundingClientRect();
-        const playerCenter = new Vector2(
-            bounds.left + (bounds.right - bounds.left) / 2,
-            bounds.top + (bounds.bottom - bounds.top) / 2
-        );
+        const playerRelativeCenter = new Vector2(
+            (bounds.right - bounds.left) / 2,
+            (bounds.bottom - bounds.top) / 2
+        )
+        const playerCenter = Vector2.fromBoundingRect(bounds).plus(playerRelativeCenter);
 
         const cursorVelocity = mousePosition.minus(playerCenter);
         this.setGhost();
 
-        if (!renderCollision) {
-            return;
-        }
-
+        // Obtain collision
         const moundBounds = [];
         for (const entity of entities) {
             if (entity.element !== undefined && entity.element.className === "mound") {
                 moundBounds.push(entity.bounds);
             }
         }
-
         const render = [];
         const collision = this.bounds.calcCollision(moundBounds, cursorVelocity, render);
-        this.renderCalls.push(() => {
-            for (const call of render) {
-                call();
-            }
-        });
 
+        // If collision is null, make the translucent green collidedGhost at the location of the mousePosition.
         if (collision === null) {
-            this.collidedGhost.position = mousePosition.minus(playerCenter).minus(playerCenter);
+            this.collidedGhost.position = mousePosition.minus(playerRelativeCenter);
         } else {
             const intersection = collision.intersection;
             const toIntersection = intersection.minus(collision.point);
@@ -100,16 +96,23 @@ class Player {
 
             const [p1, p2] = collision.side;
 
-            this.renderCalls.push(() => {
-                const canvas = document.getElementById("debug-layer");
-                let ctx = canvas.getContext("2d");
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = `rgb(0, 0, 255)`;
-                ctx.beginPath();
-                ctx.moveTo(Math.floor(p1.x), Math.floor(p1.y));
-                ctx.lineTo(Math.floor(p2.x), Math.floor(p2.y));
-                ctx.stroke();
-            });
+            if (renderCollision) {
+                this.renderCalls.push(() => {
+                    const canvas = document.getElementById("debug-layer");
+                    let ctx = canvas.getContext("2d");
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = `rgb(0, 0, 255)`;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.floor(p1.x), Math.floor(p1.y));
+                    ctx.lineTo(Math.floor(p2.x), Math.floor(p2.y));
+                    ctx.stroke();
+                });
+                this.renderCalls.push(() => {
+                    for (const call of render) {
+                        call();
+                    }
+                });
+            }
         }
     }
 
@@ -122,11 +125,11 @@ class Player {
         }
 
         const bounds = this.element.getBoundingClientRect();
-        const playerCenter = new Vector2(
+        const playerRelativeCenter = new Vector2(
             (bounds.right - bounds.left) / 2,
             (bounds.bottom - bounds.top) / 2
         );
-        this.ghost.position = mousePosition.minus(playerCenter);
+        this.ghost.position = mousePosition.minus(playerRelativeCenter);
     }
 
     renderBounds() {

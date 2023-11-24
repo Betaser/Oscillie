@@ -244,6 +244,11 @@ class Vector2 {
         this.y -= vector2.y;
     }
 
+    invY() {
+        this.y *= -1;
+        return this;
+    }
+
     toString() {
         return "<" + this.x + ", " + this.y + ">";
     }
