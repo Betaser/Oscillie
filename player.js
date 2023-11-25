@@ -65,10 +65,7 @@ class Player {
         this.renderCalls = [];
 
         const bounds = this.element.getBoundingClientRect();
-        const playerRelativeCenter = new Vector2(
-            (bounds.right - bounds.left) / 2,
-            (bounds.bottom - bounds.top) / 2
-        )
+        const playerRelativeCenter = relativeCenterOf(bounds);
         const playerCenter = Vector2.fromBoundingRect(bounds).plus(playerRelativeCenter);
 
         const cursorVelocity = mousePosition.minus(playerCenter);
@@ -88,8 +85,13 @@ class Player {
         if (collision === null) {
             this.collidedGhost.position = mousePosition.minus(playerRelativeCenter);
         } else {
+            // Collision detection math, continued here
             const intersection = collision.intersection;
-            const toIntersection = intersection.minus(collision.point);
+            let toIntersection = intersection.minus(collision.point);
+            // Build in a gap. It should probably be a small forced value.
+            const FLOAT_DIST = 50;
+            const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision, FLOAT_DIST);
+            toIntersection = toIntersection.plus(floatingDisplacement);
             this.collidedGhost.position = collision.invertedRaycast 
                 ? this.position.minus(toIntersection)
                 : this.position.plus(toIntersection);
@@ -125,10 +127,7 @@ class Player {
         }
 
         const bounds = this.element.getBoundingClientRect();
-        const playerRelativeCenter = new Vector2(
-            (bounds.right - bounds.left) / 2,
-            (bounds.bottom - bounds.top) / 2
-        );
+        const playerRelativeCenter = relativeCenterOf(bounds);
         this.ghost.position = mousePosition.minus(playerRelativeCenter);
     }
 

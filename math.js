@@ -1,3 +1,10 @@
+function relativeCenterOf(bounds) {
+    return new Vector2(
+        (bounds.right - bounds.left) / 2,
+        (bounds.bottom - bounds.top) / 2
+    );
+}
+
 class Polygon {
     constructor(points) {
         this.points = points;
@@ -184,7 +191,27 @@ class Polygon {
                 ctx.stroke();
             });
         }
+
         return closestCollision;
+    }
+
+    calcFloatingDisplacement(collision, FLOAT_DIST = 15) {
+        const intersection = collision.intersection;
+        const toIntersection = intersection.minus(collision.point);
+        
+        // Do later, for now:
+        // const floatingDisplacement = toIntersection.scaled(0.8);
+
+        const side = collision.side;
+        // Maybe the following, but that's annoying
+        // sin(theta)
+        // a x b = |a||b|sin(theta)
+        const a = side[0].minus(side[1]);
+        const b = toIntersection;
+        const sinTheta = a.crossMag(b) / (a.mag() * b.mag());
+        // We want the opposite side of SOH
+        const hypotenuse = FLOAT_DIST / sinTheta;
+        return toIntersection.normalized().scaled(hypotenuse).negated();
     }
 
     getSides() {
@@ -219,7 +246,7 @@ class Vector2 {
     }
 
     mag() {
-        return Math.sqrt(this.x * this.x, this.y * this.y);
+        return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
     clone() {
@@ -234,6 +261,10 @@ class Vector2 {
         return new Vector2(this.x - vector2.x, this.y - vector2.y);
     }
 
+    negated() {
+        return new Vector2(-this.x, -this.y);
+    }
+
     add(vector2) {
         this.x += vector2.x;
         this.y += vector2.y;
@@ -244,9 +275,30 @@ class Vector2 {
         this.y -= vector2.y;
     }
 
-    invY() {
-        this.y *= -1;
-        return this;
+    // The cross product of 2 2d vectors gives a vector with only a z component, seems confusing to define here. 
+    // But the magnitude of that z component is useful.
+    crossMag(vector2) {
+        return Math.abs(this.x * vector2.y - this.y * vector2.x);
+    }
+
+    scale(factor) {
+        this.x *= factor;
+        this.y *= factor;
+    }
+
+    scaled(factor) {
+        let vector = this.clone();
+        vector.x *= factor;
+        vector.y *= factor;
+        return vector;
+    }
+    
+    normalized() {
+        let vector = this.clone();
+        const mag = vector.mag();
+        vector.x /= mag;
+        vector.y /= mag;  
+        return vector;
     }
 
     toString() {
