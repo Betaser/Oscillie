@@ -132,6 +132,38 @@ function initFps(fpsValue) {
 }
 initFps(60);
 
+// Or like this
+/*
+function update() {
+    setTimeout(() => {
+        requestAnimationFrame(update);
+
+        now = Date.now();
+        elapsed = now - prevTime;
+        prevTime = now - (elapsed % fpsInterval);
+
+        updateInput();
+
+        updateEntities(frames);
+        frames++;
+
+        const layers = document.getElementById("layers");
+        for (const canvas of layers.getElementsByTagName("canvas")) {
+            const screenRectangle = document.getElementById("screen-rect").getBoundingClientRect();
+            canvas.width = screenRectangle.width;
+            canvas.height = screenRectangle.height;
+        }
+
+        if (frames % displayFrameInterval === 0) {
+            elapsedDisplay = now - prevDisplayTime;
+            prevDisplayTime = now - (elapsedDisplay % displayFrameInterval);
+            const currentFps = 1000 / (elapsedDisplay / displayFrameInterval);
+            getElement("fps").innerHTML = "FPS: " + currentFps;
+        }
+    }, 1000 / fps);
+}
+*/
+
 function update() {
     requestAnimationFrame(update);
 
@@ -152,7 +184,6 @@ function update() {
             canvas.width = screenRectangle.width;
             canvas.height = screenRectangle.height;
         }
-
 
         if (frames % displayFrameInterval === 0) {
             elapsedDisplay = now - prevDisplayTime;

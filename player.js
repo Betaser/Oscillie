@@ -1,7 +1,7 @@
+// This is literally just shorthand for PlayerInputsController.DebugCollision.
 let renderCollision = false;
 
 class Player {
-
     // element is like document.getElementsByClassName("...")[0]
     constructor(element, position = null) {
         this.element = element;
@@ -29,7 +29,6 @@ class Player {
     }
 
     moveWithCollision() {
-        // As you hold du
     }
 
     update() {
@@ -40,8 +39,8 @@ class Player {
             this.velocity.x -= 1;
         }
         
-        if (!PlayerInputsController.DebugTurnOffGravity) {
-            // Gravity
+        // Gravity
+        if (!PlayerInputsController.DebugTurnOffGravity && !renderCollision) {
             this.velocity.add(new Vector2(0, 0.25));
         }
 
@@ -119,6 +118,7 @@ class Player {
     }
 
     setGhost() {
+        // If debug collision was just pressed!
         if (PlayerInputsControllerKeyDown.DebugCollision) {
             const ghostStyle = this.ghost.element.style;
             ghostStyle.display = ghostStyle.display === "none" ? "block" : "none";
@@ -138,8 +138,8 @@ class Player {
     }
 
     render() {
-        for (const render of this.renderCalls) {
-            render();
+        for (const renderCall of this.renderCalls) {
+            renderCall();
         }
 
         renderElement(this.element, this.position);

@@ -37,6 +37,12 @@ class Polygon {
         return "{" + points + "}";
     }
 
+    // TODO: Apply rotation matrix to relevant points before calculation (and then reverse the rotation on the result) so that no lines are weird and vertical.
+    //  This will allow anything close to vertical to work just as accurately as a randomly sloped line.
+    // Then, we also will add an error forgiveness to intersection bounds checking on two line segments.
+    // We then compare two line sides, one of which may not supposed to be intersecting but the other is. 
+    //  By compare I mean see which midpoint of the line to the center of the shape forms a vector more in line with the polygon's velocity.
+
     // Returns the polygon which was collided with, 
     //  the index of the side it collided with,
     //  and the location the collision happened.
