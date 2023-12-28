@@ -41,14 +41,18 @@ class Player {
         const goHere = mousePosition.minus(relativeCenterOf(this.element.getBoundingClientRect()));
 
         // But don't actually go here, apply collision detection.
-
-        this.position.set(goHere);
+        const collision = this.calcMoundCollision();
+        this.position.set(collision === null ? goHere : collision.gappedPosition);
     }
 
-    calcMoundCollision(render) {
+    relativeCenter() {
         const bounds = this.element.getBoundingClientRect();
-        const playerRelativeCenter = relativeCenterOf(bounds);
-        const playerCenter = Vector2.fromBoundingRect(bounds).plus(playerRelativeCenter);
+        return relativeCenterOf(bounds);
+    }
+
+    calcMoundCollision(render, FLOAT_DIST = 20) {
+        const playerCenter = Vector2.fromBoundingRect(this.element.getBoundingClientRect())
+            .plus(this.relativeCenter());
 
         const cursorVelocity = mousePosition.minus(playerCenter);
         const moundBounds = [];
@@ -62,25 +66,27 @@ class Player {
 
         // If collision is null, make the translucent green collidedGhost at the location of the mousePosition.
         if (collision === null) {
-            this.collidedGhost.position = mousePosition.minus(playerRelativeCenter);
-        } else {
-            // Collision detection math, continued here
-            const intersection = collision.intersection;
-            let toIntersection = intersection.minus(collision.point);
-            // Build in a gap. It should probably be a small forced value.
-            const FLOAT_DIST = 50;
-            const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision, FLOAT_DIST);
-            toIntersection = toIntersection.plus(floatingDisplacement);
-            this.collidedGhost.position = collision.invertedRaycast 
-                ? this.position.minus(toIntersection)
-                : this.position.plus(toIntersection);
+            return null;
         }
 
+        // Collision detection math, continued here
+        const intersection = collision.intersection;
+        let toIntersection = intersection.minus(collision.point);
+        // Build in a gap. It should probably be a small forced value.
+        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision, FLOAT_DIST);
+        toIntersection = toIntersection.plus(floatingDisplacement);
+        const gappedPosition = collision.invertedRaycast 
+            ? this.position.minus(toIntersection)
+            : this.position.plus(toIntersection);
+        collision.gappedPosition = gappedPosition;
         return collision;
     }
 
     update() {
         this.updateVelocity();
+        if (PlayerInputsControllerKeyDown.ResetVelocity) {
+            this.velocity.set(new Vector2(0, 0));
+        }
         
         // Gravity
         if (!PlayerInputsController.DebugTurnOffGravity && !renderCollision) {
@@ -103,25 +109,23 @@ class Player {
         this.position.add(this.velocity);
         
         // Since this is teleporting, this overrides this.position.
-        if (PlayerInputsController.MoveToMouse) {
+        if (renderCollision && PlayerInputsController.MoveToMouse) {
             this.moveToMouse();
         }
 
         // TODO: Collision detection
-        // The location the ghost is being set to is a temporary thing, until collision detection algorithsm are in testing phase.
+        // The location the ghost is being set to is a temporary thing, 
+        //   until collision detection algorithsm are in testing phase.
         this.renderCalls = [];
 
         this.setGhost();
 
         // Obtain collision
-        const moundBounds = [];
-        for (const entity of entities) {
-            if (entity.element !== undefined && entity.element.className === "mound") {
-                moundBounds.push(entity.bounds);
-            }
-        }
         const render = [];
         const collision = this.calcMoundCollision(render);
+        this.collidedGhost.position = collision === null 
+            ? mousePosition.minus(this.relativeCenter())
+            : collision.gappedPosition;
 
         if (collision !== null) {
             const [p1, p2] = collision.side;

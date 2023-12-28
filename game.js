@@ -12,6 +12,7 @@ const PlayerInputs = Object.freeze({
     Reset: ["KeyR", "Backspace"],
     SwitchWeapon: ["KeyS"],
     MoveToMouse: [0], // left mouse click.
+    ResetVelocity: ["KeyV"],
 });
 
 const PlayerInputsController = Object.assign({}, PlayerInputs);
