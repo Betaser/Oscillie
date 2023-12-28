@@ -93,24 +93,27 @@ class Player {
             this.velocity.add(new Vector2(0, 0.25));
         }
 
-        // Pretend there's ground, and for collision detection reasons, float a little above it.
-        // With this pretend ground, apply major friction.
-        const ground = getElement("ground");
-        const groundLevel = ground.getBoundingClientRect().top;
-        const playerHeight = this.element.getBoundingClientRect().height;
-        const maxY = groundLevel - playerHeight - 10;
-        if (this.position.y > maxY) {
-            this.velocity.y = 0;
-            this.position.y = maxY;
+        if (!renderCollision) {
+            // Pretend there's ground, and for collision detection reasons, float a little above it.
+            // With this pretend ground, apply major friction.
+            const ground = getElement("ground");
+            const groundLevel = ground.getBoundingClientRect().top;
+            const playerHeight = this.element.getBoundingClientRect().height;
+            const maxY = groundLevel - playerHeight - 10;
 
-            this.velocity.x /= 1.2;
-        }
+            if (this.position.y > maxY) {
+                this.velocity.y = 0;
+                this.position.y = maxY;
 
-        this.position.add(this.velocity);
-        
-        // Since this is teleporting, this overrides this.position.
-        if (renderCollision && PlayerInputsController.MoveToMouse) {
-            this.moveToMouse();
+                this.velocity.x /= 1.2;
+            }
+
+            this.position.add(this.velocity);
+        } else {
+            // Since this is teleporting, this overrides this.position.
+            if (PlayerInputsController.MoveToMouse) {
+                this.moveToMouse();
+            }
         }
 
         // TODO: Collision detection
