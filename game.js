@@ -1,8 +1,3 @@
-/*
-TODO:
-- Create a sinusoidally bouncing ball
-*/
-
 const PlayerInputs = Object.freeze({
     Jump: ["KeyW", "Space"],
     DebugLeft: ["ArrowLeft"],
@@ -15,7 +10,8 @@ const PlayerInputs = Object.freeze({
     MoveLeft: ["KeyA"],
     MoveRight: ["KeyD"],
     Reset: ["KeyR", "Backspace"],
-    SwitchWeapon: ["KeyS"]
+    SwitchWeapon: ["KeyS"],
+    MoveToMouse: [0], // left mouse click.
 });
 
 const PlayerInputsController = Object.assign({}, PlayerInputs);

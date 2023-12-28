@@ -9,8 +9,34 @@ onmousemove = (e) => {
     mousePosition.y = mouseY;
 };
 
+function updateInputs(e, eventInfoToCheck = "code", keyDown = true) {
+    let matched = false;
+    checkInput: for (const input of Object.keys(PlayerInputs)) {
+        const codes = PlayerInputs[input];
+
+        for (const code of codes) {
+            if (e[eventInfoToCheck] === code) {
+                PlayerInputsController[input] = keyDown;
+                matched = true;
+                break checkInput;
+            }
+        }
+    }
+    if (!matched) {
+        console.log(e.button);
+    }
+}
+
+onmouseup = (e) => {
+    updateInputs(e, "button", false);
+}
+
+onmousedown = (e) => {
+    updateInputs(e, "button", true);
+};
+
 function setupTips() {
-    document.addEventListener("click", (e) => {
+    document.addEventListener("click", () => {
         let tips = document.getElementsByClassName("tips")[0];
         tips.querySelector("p").innerHTML += "!";
     });
@@ -18,40 +44,14 @@ function setupTips() {
 
 function setupInput() {
     document.addEventListener("keyup", (e) => {
-        let matched = false;
-        checkInput: for (const input of Object.keys(PlayerInputs)) {
-            const codes = PlayerInputs[input];
-
-            for (const code of codes) {
-                if (e.code === code) {
-                    PlayerInputsController[input] = false;
-                    matched = true;
-                    break checkInput;
-                }
-            }
-        }
-        if (!matched) {
-            console.log(e.code);
-        }
+        updateInputs(e, "code", false);
     });
 
     document.addEventListener("keydown", (e) => {
-        let matched = false;
-        checkInput: for (const input of Object.keys(PlayerInputs)) {
-            const codes = PlayerInputs[input];
-
-            for (const code of codes) {
-                if (e.code === code) {
-                    PlayerInputsController[input] = true;
-                    matched = true;
-                    break checkInput;
-                }
-            }
-        }
-        if (!matched) {
-            console.log(e.code);
-        }
+        updateInputs(e, "code", true);
     });
+    // I can do document.addEventListener "click", but it's annoying that it will only activate on clicks,
+    //  and therefore I would have to invert the dependency of PlayerInputsController and PlayerInputsControllerKeyDown for just the mouse, bleh.
 }
 
 function updateInput() {

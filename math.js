@@ -271,6 +271,11 @@ class Vector2 {
         return new Vector2(-this.x, -this.y);
     }
 
+    set(vector2) {
+        this.x = vector2.x;
+        this.y = vector2.y;
+    }
+
     add(vector2) {
         this.x += vector2.x;
         this.y += vector2.y;
