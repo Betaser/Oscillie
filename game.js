@@ -30,6 +30,13 @@ for (const action of Object.keys(PlayerInputsController)) {
     PlayerInputsControllerKeyDown[action] = false;
 }
 
+/// DEBUG UI
+getElement("debug-panel-close").addEventListener("click", () => {
+    const debugPanel = getElement("debug-panel");
+    const text = debugPanel.getElementsByClassName("debug-text")[0];
+    text.innerHTML = "TODO, centering this button in this div took way longer than I'd like to admit :( Omg why does it have to be sideways 😭";
+});
+
 /// INPUT
 setupTips();
 setupInput();

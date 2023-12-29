@@ -28,9 +28,27 @@
 
         <div id="screen-rect" class="expanding-rect"></div>
 
-        <div class="tips">
-            <p>Check out the console for interactivity</p>
-        </div>
+        <ul class="tl-infobox">
+            <li>
+            <div class="tips">
+                <p>Check out the console for interactivity</p>
+            </div>
+            </li>
+
+            <li>
+                <div id="active debug effects" class="debug-panel">
+                    <span class="debug-text"></span>
+                    <button class="generic-close debug-panel-close">view debug info</button>
+                </div>
+            </li>
+
+            <li>
+                <p class="fps">fps: </div>
+            </li>
+            <li>
+                <button>what</button>
+            </li>
+        </ul>
 
         <div class="test-grid"></div>
         <div class="player"></div>
@@ -38,7 +56,6 @@
         <div class="player collided-ghost"></div>
         <div class="ground"></div>
 
-        <p class="fps">fps: </div>
 
         <script src="math.js"></script>
         <script src="mound.js"></script>

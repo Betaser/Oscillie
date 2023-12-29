@@ -38,6 +38,7 @@ class Player {
     }
 
     moveToMouse() {
+        // Let's build in the slide move too.
         const goHere = mousePosition.minus(relativeCenterOf(this.element.getBoundingClientRect()));
 
         // But don't actually go here, apply collision detection.
@@ -78,7 +79,8 @@ class Player {
         const gappedPosition = collision.invertedRaycast 
             ? this.position.minus(toIntersection)
             : this.position.plus(toIntersection);
-        collision.gappedPosition = gappedPosition;
+        collision["gappedPosition"] = gappedPosition;
+
         return collision;
     }
 
