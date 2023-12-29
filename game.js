@@ -13,6 +13,7 @@ const PlayerInputs = Object.freeze({
     SwitchWeapon: ["KeyS"],
     MoveToMouse: [0], // left mouse click.
     ResetVelocity: ["KeyV"],
+    ToggleDebugMode: ["Backquote"],
 });
 
 const PlayerInputsController = Object.assign({}, PlayerInputs);
@@ -29,13 +30,6 @@ const PlayerInputsControllerKeyDown = Object.assign({}, PlayerInputs);
 for (const action of Object.keys(PlayerInputsController)) {
     PlayerInputsControllerKeyDown[action] = false;
 }
-
-/// DEBUG UI
-getElement("debug-panel-close").addEventListener("click", () => {
-    const debugPanel = getElement("debug-panel");
-    const text = debugPanel.getElementsByClassName("debug-text")[0];
-    text.innerHTML = "TODO, centering this button in this div took way longer than I'd like to admit :( Omg why does it have to be sideways 😭";
-});
 
 /// INPUT
 setupTips();
@@ -168,6 +162,47 @@ function update() {
 }
 */
 
+/// DEBUG UI
+let isDebugInfoShown = false;
+
+function toggleDebugMode() {
+    const debugPanel = getElement("debug-panel");
+    const debugPanelButton = getElement("debug-panel-button");
+    const text = debugPanel.getElementsByClassName("debug-text")[0];
+    if (isDebugInfoShown) {
+        text.innerHTML = "";
+        debugPanelButton.innerHTML = "view debug info";
+    } else {
+        debugPanelButton.innerHTML = "hide debug info";
+    }
+    isDebugInfoShown = !isDebugInfoShown;
+}
+
+getElement("debug-panel-button").addEventListener("click", toggleDebugMode);
+
+function updateDebugRender() {
+    if (!isDebugInfoShown) {
+        return;
+    }
+
+    const debugPanel = getElement("debug-panel");
+    const text = debugPanel.getElementsByClassName("debug-text")[0];
+
+    text.innerHTML = "";
+    appendDebugList(text);
+}
+
+// debug-text is a ul.
+function appendDebugList(list) {
+    function addItem(mutateItem) {
+        var item = document.createElement("li");
+        mutateItem(item);
+        list.appendChild(item);
+    }
+    addItem((item) => item.innerHTML = "Render Collision (Click C) : " + renderCollision);
+    addItem((item) => item.innerHTML = "Gravity (Click G) : " + (!PlayerInputsController.DebugTurnOffGravity && !renderCollision));
+}
+
 function update() {
     requestAnimationFrame(update);
 
@@ -178,6 +213,10 @@ function update() {
         prevTime = now - (elapsed % fpsInterval);
 
         updateInput();
+
+        if (PlayerInputsControllerKeyDown.ToggleDebugMode) {
+            toggleDebugMode();
+        }
 
         updateEntities(frames);
         frames++;
@@ -205,6 +244,8 @@ let renderBounds = true;
 /// RENDERING LOOP (RUNS ASYNCHRONOUSLY)
 function updateRender() {
     requestAnimationFrame(updateRender);
+
+    updateDebugRender();
     updateRenderEntities(frames);
     if (renderBounds) {
         updateRenderBoundsEntities(frames);

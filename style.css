@@ -5,11 +5,18 @@ body {
     overflow: hidden;
 }
 
+.horz-center {
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .debug-panel {
     width: 20vw;
     background-color: rgb(250, 230, 10, 0.6);
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     z-index: inherit;
 }
 
@@ -30,16 +37,12 @@ body {
     background-color: orangered; 
 }
 
-.generic-close:focus {
+.generic-close:active {
     background-color: orange;
 }
 
-.debug-panel-close {
+.debug-panel-button {
     background-color: darkviolet;
-    left: 0;
-    right: 0;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 .tl-infobox {

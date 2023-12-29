@@ -23,7 +23,7 @@ function updateInputs(e, eventInfoToCheck = "code", keyDown = true) {
         }
     }
     if (!matched) {
-        console.log(e.button);
+        console.log(e[eventInfoToCheck]);
     }
 }
 
