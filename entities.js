@@ -32,3 +32,11 @@ function updateRenderBoundsEntities(frames) {
         }
     }
 }
+
+class Entity {
+    constructor(element, position, bounds) {
+        this.element = element;
+        this.position = position;
+        this.bounds = bounds;
+    }
+}

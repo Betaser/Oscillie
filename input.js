@@ -57,7 +57,7 @@ function setupInput() {
 function updateInput() {
     // Proper way to toggle an input.
     for (const input of Object.keys(PlayerInputsController)) {
-        PlayerInputsControllerKeyDown[input] = (!LastPlayerInputs[input] && PlayerInputsController[input]);
+        PlayerInputsControllerKeyDown[input] = !LastPlayerInputs[input] && PlayerInputsController[input];
         LastPlayerInputs[input] = PlayerInputsController[input];
     }
 

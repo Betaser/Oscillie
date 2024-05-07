@@ -41,7 +41,7 @@ body {
     background-color: orange;
 }
 
-.debug-panel-button {
+.debug-panel-button.generic-close {
     background-color: darkviolet;
 }
 
@@ -100,6 +100,7 @@ body {
     height: 20vh;
     position: absolute; 
     background-color: brown;
+    z-index: 0;
 }
 
 .oscillating-ball {
@@ -115,6 +116,7 @@ body {
     padding: 40;
     background-color: green;
     position: absolute;
+    z-index: 1;
 }
 
 .player.collided-ghost {
@@ -128,6 +130,13 @@ body {
     display: none;
     z-index: 2;
     opacity: 0.4;
+}
+
+.player.initial-collision-ghost {
+    display: none;
+    z-index: 4;
+    opacity: 0.4;
+    border-radius: 50%;
 }
 
 .test-grid {

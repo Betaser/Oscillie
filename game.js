@@ -11,7 +11,7 @@ const PlayerInputs = Object.freeze({
     MoveRight: ["KeyD"],
     Reset: ["KeyR", "Backspace"],
     SwitchWeapon: ["KeyS"],
-    MoveToMouse: [0], // left mouse click.
+    MoveToMouse: [0, "KeyM"], // left mouse click.
     ResetVelocity: ["KeyV"],
     ToggleDebugMode: ["Backquote"],
 });
@@ -103,7 +103,7 @@ loadEntity(ball);
     const positionsAndSizes = [
         [new Vector2(60, 60), new Vector2(10, 10)],
         [new Vector2(70, 62), new Vector2(10, 8)],
-        [new Vector2(80, 58), new Vector2(10, 12)],
+        [new Vector2(80, 56), new Vector2(10, 14)],
     ];
     for (const [position, size] of positionsAndSizes) {
         const moundElement = document.createElement("div");
@@ -112,6 +112,7 @@ loadEntity(ball);
         // Mound calls document.body.appendChild so that it can get its own boundingClientRect in its constructor
         addEntity(mound);
     }
+    // Create a triangle mound, why not.
 }
 
 /// UPDATE LOOP

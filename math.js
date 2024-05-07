@@ -5,6 +5,29 @@ function relativeCenterOf(bounds) {
     );
 }
 
+const PI_OVER_4_MAT = radToMat(Math.PI / 4);
+const NEG_PI_OVER_4_MAT = radToMat(-Math.PI / 4);
+
+function radToMat(rad) {
+    let mat = [[], []];
+    mat[0][0] = Math.cos(rad);
+    mat[1][0] = -Math.sin(rad);
+    mat[0][1] = Math.sin(rad);
+    mat[1][1] = Math.cos(rad);
+    return mat;
+}
+
+function toString(mat) {
+    return `[ [${mat[0][0].toFixed(3)}] [${mat[1][0].toFixed(3)}]\n  [${mat[0][1].toFixed(3)}] [${mat[1][1].toFixed(3)}] ]`; 
+}
+
+function applyRotation(toThis, mat) {
+    return new Vector2(
+        toThis.x * mat[0][0] + toThis.y * mat[1][0],
+        toThis.x * mat[0][1] + toThis.y * mat[1][1]
+    );
+}
+
 class Polygon {
     constructor(points) {
         this.points = points;
@@ -49,9 +72,11 @@ class Polygon {
     // Probably want to also consider the sliding velocity, but this might not have
     //  to be a return value, could be another function.
     // RenderCalls is like an optional out variable that you could totally ignore.
-    calcCollision(polygons, velocity, renderCalls=[]) {
+    calcCollision(polygons, velocity, renderCalls=[], forPrinting=[]) {
         // There is a hacky check for roughly vertical lines, to work with slope math.
-        function slopeSolve(movingPoint, side) {
+        // This doesn't work for perfectly vertical movement.
+        // TODO: Fix that ^
+        function slopeSolve(movingPointSeg, side) {
             class Line {
                 constructor(twoPoints) {
                     const [p1, p2] = twoPoints;
@@ -61,23 +86,95 @@ class Polygon {
             }
 
             // To deal with if side is vertical
-            if (Math.abs(side[0].x - side[1].x) / Math.abs(side[0].y - side[1].y) < 0.01) {
-                const movingPointLine = new Line(movingPoint);
+            if (Math.abs((side[0].x - side[1].x) / (side[0].y - side[1].y)) < 0.01) {
+                const movingPointSegLine = new Line(movingPointSeg);
                 const x = side[0].x;
-                const y = movingPointLine.m * x + movingPointLine.b;
+                const y = movingPointSegLine.m * x + movingPointSegLine.b;
                 return new Vector2(x, y);
             }
 
-            const movingPointLine = new Line(movingPoint);
+            // We have an issue with the movingPointSeg being vertical.
+            // We get NaN results because the movingPointSegLine.m is Infinity.
+            if (Math.abs((movingPointSeg[0].x - movingPointSeg[1].x) 
+                       / (movingPointSeg[0].y - movingPointSeg[1].y)) < 0.01) {
+                const sideLine = new Line(side);
+                const x = movingPointSeg[0].x;
+                const y = sideLine.m * x + sideLine.b;
+                return new Vector2(x, y);
+                // console.log("movingPointSeg slope = " + movingPointSegLine.m);
+                // console.log("x = " + x + " y = " + y);
+            }
+
+            const movingPointSegLine = new Line(movingPointSeg);
             const sideLine = new Line(side);
-            const x = (movingPointLine.b - sideLine.b) / (sideLine.m - movingPointLine.m);
+            const x = (movingPointSegLine.b - sideLine.b) / (sideLine.m - movingPointSegLine.m);
             const y = sideLine.m * x + sideLine.b;
 
             return new Vector2(x, y);
         }
 
-        function boundingBoxVerify(intersectionFunc, movingPoint, side) {
-            const intersection = intersectionFunc(movingPoint, side);
+        // This just doesn't work a lot of the time.
+        function rotationMatMethod(movingPointSeg, sideSeg) {
+            class Line {
+                constructor(twoPoints) {
+                    const [p1, p2] = twoPoints;
+                    this.m = (p2.y - p1.y) / (p2.x - p1.x);
+                    this.b = p1.y - this.m * p1.x;
+                }
+            }
+
+            // blah blah todo. copy from the C++ stuff.
+            const dx1 = movingPointSeg[0].x - movingPointSeg[1].x;
+            const dy1 = movingPointSeg[0].y - movingPointSeg[1].y;
+            const dx2 = sideSeg[0].x - sideSeg[1].x;
+            const dy2 = sideSeg[0].y - sideSeg[1].y;
+
+            const VERT_ENOUGH = 2;
+            function rotateLine(line, mat) {
+                const pt1 = applyRotation(line[0], mat);
+                const pt2 = applyRotation(line[1], mat);
+                return [ pt1, pt2 ];
+            }
+
+            // Edge case is when both lines are very far away from vertical.
+            const bothLinesOk = (dx1 === 0 || dx2 === 0) ? true : !(Math.abs(dy1 / dx1) < VERT_ENOUGH && Math.abs(dy2 / dx2) < VERT_ENOUGH);
+            let mat, invMat;
+
+            if (bothLinesOk) {
+                // cross multiplication comparison of the slopes.
+                if (Math.abs(dy1 * dx2) > Math.abs(dx1 * dy2)) {
+                    if (dx2 < 0) {
+                        mat = PI_OVER_4_MAT;
+                        invMat = NEG_PI_OVER_4_MAT;
+                    } else {
+                        mat = NEG_PI_OVER_4_MAT;
+                        invMat = PI_OVER_4_MAT;
+                    }
+                } else {
+                    if (dx1 < 0) {
+                        mat = PI_OVER_4_MAT;
+                        invMat = NEG_PI_OVER_4_MAT;
+                    } else {
+                        mat = NEG_PI_OVER_4_MAT;
+                        invMat = PI_OVER_4_MAT;
+                    }
+                }
+
+                movingPointSeg = rotateLine(movingPointSeg, mat);
+                sideSeg = rotateLine(sideSeg, mat);
+            }
+
+            const movingPointLine = new Line(movingPointSeg);
+            const sideLine = new Line(sideSeg);
+
+            const x = (movingPointLine.b - sideLine.b) / (sideLine.m - movingPointLine.m);
+            const y = sideLine.m * x + sideLine.b;
+            // We don't handle perfectly parallel stuff yet.
+            return bothLinesOk ? applyRotation(new Vector2(x, y), invMat) : new Vector2(x, y);
+        }
+
+        function boundingBoxVerify(intersectionFunc, movingPointSeg, sideSeg) {
+            const intersection = intersectionFunc(movingPointSeg, sideSeg);
             function inBounds(lineSegment) {
                 const minX = Math.min(lineSegment[0].x, lineSegment[1].x);
                 const maxX = Math.max(lineSegment[0].x, lineSegment[1].x);
@@ -87,7 +184,9 @@ class Polygon {
                     && (minY <= intersection.y && intersection.y <= maxY);
             }
 
-            if (inBounds(movingPoint) && inBounds(side)) {
+            forPrinting.push(`${intersection.toString()} movingPointSeg: ${movingPointSeg} sideSeg ${sideSeg}`);
+
+            if (inBounds(movingPointSeg) && inBounds(sideSeg)) {
                 return intersection;
             }
             return null;
@@ -106,15 +205,15 @@ class Polygon {
         let closestCollision = null;
 
         for (const point of this.points) {
-            const movingPoint = [point, point.plus(velocity)];
+            const movingPointSeg = [point, point.plus(velocity)];
             renderCalls.push(() => {
                 const canvas = document.getElementById("debug-layer");
                 let ctx = canvas.getContext("2d");
                 ctx.lineWidth = 6;
                 ctx.strokeStyle = `rgb(0, 255, 255)`;
                 ctx.beginPath();
-                ctx.moveTo(Math.floor(movingPoint[0].x), Math.floor(movingPoint[0].y));
-                ctx.lineTo(Math.floor(movingPoint[1].x), Math.floor(movingPoint[1].y));
+                ctx.moveTo(Math.floor(movingPointSeg[0].x), Math.floor(movingPointSeg[0].y));
+                ctx.lineTo(Math.floor(movingPointSeg[1].x), Math.floor(movingPointSeg[1].y));
                 ctx.stroke();
             });
 
@@ -125,7 +224,9 @@ class Polygon {
                 for (const side of sides) {
                     // The most important part of the algorithm is figuring out where,
                     // and if, the side collides with the player.
-                    const intersection = boundingBoxVerify(slopeSolve, movingPoint, side);
+                    // SWITCHING OUT
+                    const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
+                    // const intersection = boundingBoxVerify(rotationMatMethod, movingPointSeg, side);
                     if (intersection === null) {
                         continue;
                     }
@@ -139,10 +240,10 @@ class Polygon {
             }
         }
 
-        // Iteration with movingPoint being from the polygons to collide with.
+        // Iteration with movingPointSeg being from the polygons to collide with.
         for (const polygon of polygons) {
             for (const point of polygon.points) {
-                const movingPoint = [point, point.minus(velocity)];
+                const movingPointSeg = [point, point.minus(velocity)];
 
                 renderCalls.push(() => {
                     const canvas = document.getElementById("debug-layer");
@@ -150,8 +251,8 @@ class Polygon {
                     ctx.lineWidth = 6;
                     ctx.strokeStyle = `rgb(0, 255, 155)`;
                     ctx.beginPath();
-                    ctx.moveTo(Math.floor(movingPoint[0].x), Math.floor(movingPoint[0].y));
-                    ctx.lineTo(Math.floor(movingPoint[1].x), Math.floor(movingPoint[1].y));
+                    ctx.moveTo(Math.floor(movingPointSeg[0].x), Math.floor(movingPointSeg[0].y));
+                    ctx.lineTo(Math.floor(movingPointSeg[1].x), Math.floor(movingPointSeg[1].y));
                     ctx.stroke();
                 });
 
@@ -160,7 +261,9 @@ class Polygon {
                 for (const side of sides) {
                     // The most important part of the algorithm is figuring out where,
                     // and if, the side collides with the player.
-                    const intersection = boundingBoxVerify(slopeSolve, movingPoint, side);
+                    // SWITCHING OUT
+                    const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
+                    // const intersection = boundingBoxVerify(rotationMatMethod, movingPointSeg, side);
                     if (intersection === null) {
                         continue;
                     }
@@ -201,6 +304,7 @@ class Polygon {
         return closestCollision;
     }
 
+    // FLOAT_DIST = 15 by default.
     calcFloatingDisplacement(collision, FLOAT_DIST = 15) {
         const intersection = collision.intersection;
         const toIntersection = intersection.minus(collision.point);
@@ -292,6 +396,15 @@ class Vector2 {
         return Math.abs(this.x * vector2.y - this.y * vector2.x);
     }
 
+    dot(vector2) {
+        return this.x * vector2.x + this.y * vector2.y;
+    }
+
+    projected(onto) {
+        const ontoMag = onto.mag();
+        return onto.scaled(this.dot(onto) / ontoMag / ontoMag);
+    }
+
     scale(factor) {
         this.x *= factor;
         this.y *= factor;
@@ -314,13 +427,5 @@ class Vector2 {
 
     toString() {
         return "<" + this.x + ", " + this.y + ">";
-    }
-}
-
-class Entity {
-    constructor(element, position, bounds) {
-        this.element = element;
-        this.position = position;
-        this.bounds = bounds;
     }
 }

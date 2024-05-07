@@ -24,6 +24,10 @@ class Player {
         collidedGhostElement.style.display = getComputedStyle(collidedGhostElement).getPropertyValue("display");
         this.collidedGhost = new Entity(collidedGhostElement, this.position.clone(), this.bounds.clone());
 
+        const initialCollisionGhostElement = getElement("player initial-collision-ghost");
+        initialCollisionGhostElement.style.display = getComputedStyle(initialCollisionGhostElement).getPropertyValue("display");
+        this.initialCollisionGhost = new Entity(initialCollisionGhostElement, this.position.clone(), this.bounds.clone());
+
         // For dirty rendering tests.
         this.renderCalls = [];
     }
@@ -37,13 +41,73 @@ class Player {
         }
     }
 
+    mtmCollision(cursorVelocity = this.calcVelocity()) {
+        // console.log("cursorVelocity = " + cursorVelocity);
+        const moundBounds = [];
+        for (const entity of entities) {
+            // if (entity.element !== undefined && 
+            if (entity.element.className === "mound") {
+                moundBounds.push(entity.bounds);
+            }
+        }
+
+        const collision = this.bounds.calcCollision(moundBounds, cursorVelocity, []);
+
+        // If collision is null, make the translucent green collidedGhost at the location of the mousePosition.
+        if (collision === null) {
+            return null;
+        }
+
+        // Collision detection math, continued here
+        const intersection = collision.intersection;
+        let toIntersection = intersection.minus(collision.point);
+        // Build in a gap. It should probably be a small forced value.
+        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision);
+        toIntersection = toIntersection.plus(floatingDisplacement);
+        const gappedPosition = collision.invertedRaycast 
+            ? this.position.minus(toIntersection)
+            : this.position.plus(toIntersection);
+        collision["gappedPosition"] = gappedPosition;
+
+        return collision;
+    }
+
     moveToMouse() {
         // Let's build in the slide move too.
-        const goHere = mousePosition.minus(relativeCenterOf(this.element.getBoundingClientRect()));
+        const initialGoHere = mousePosition.minus(relativeCenterOf(this.element.getBoundingClientRect()));
 
         // But don't actually go here, apply collision detection.
-        const collision = this.calcMoundCollision();
-        this.position.set(collision === null ? goHere : collision.gappedPosition);
+        const initialCollision = this.mtmCollision();
+        this.position.set(initialCollision === null ? initialGoHere : initialCollision.gappedPosition);
+        
+        if (initialCollision === null) {
+            this.initialCollisionGhost.element.style.display = "none";
+            return;
+        }
+
+        // This is where we have the correct visualization for pre-slide collision.
+        this.initialCollisionGhost.position.set(this.position);
+        this.initialCollisionGhost.element.style.display = "block";
+
+        // Now perform the sliding operation.
+        const restOfVelocity = initialGoHere.minus(this.position);
+        // console.log(restOfVelocity);
+        const side = initialCollision.side[1].minus(initialCollision.side[0]);
+
+        // Get the projection of the rest of the velocity onto the colliding surface.
+        const projectedVelocity = restOfVelocity.projected(side);
+        // console.log(projectedVelocity);
+
+        // We need to make this.bounds updated, since this.bounds.calcCollision is the collision algo.
+        renderElement(this.element, this.position);
+        this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
+
+        const finalCollision = this.mtmCollision(projectedVelocity);
+
+        // console.log(finalCollision);
+
+        this.position.set(finalCollision === null ? this.position.plus(projectedVelocity) : finalCollision.gappedPosition);
+        // console.log(initialCollision);
     }
 
     relativeCenter() {
@@ -51,11 +115,14 @@ class Player {
         return relativeCenterOf(bounds);
     }
 
-    calcMoundCollision(render, FLOAT_DIST = 20) {
+    calcVelocity() {
         const playerCenter = Vector2.fromBoundingRect(this.element.getBoundingClientRect())
             .plus(this.relativeCenter());
 
-        const cursorVelocity = mousePosition.minus(playerCenter);
+        return mousePosition.minus(playerCenter);
+    }
+
+    calcMoundCollision(render, cursorVelocity = this.calcVelocity()) {
         const moundBounds = [];
         for (const entity of entities) {
             if (entity.element !== undefined && entity.element.className === "mound") {
@@ -74,7 +141,7 @@ class Player {
         const intersection = collision.intersection;
         let toIntersection = intersection.minus(collision.point);
         // Build in a gap. It should probably be a small forced value.
-        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision, FLOAT_DIST);
+        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision, 15);
         toIntersection = toIntersection.plus(floatingDisplacement);
         const gappedPosition = collision.invertedRaycast 
             ? this.position.minus(toIntersection)
@@ -113,7 +180,7 @@ class Player {
             this.position.add(this.velocity);
         } else {
             // Since this is teleporting, this overrides this.position.
-            if (PlayerInputsController.MoveToMouse) {
+            if (PlayerInputsControllerKeyDown.MoveToMouse) {
                 this.moveToMouse();
             }
         }
@@ -161,6 +228,8 @@ class Player {
             ghostStyle.display = ghostStyle.display === "none" ? "block" : "none";
             const collidedStyle = this.collidedGhost.element.style;
             collidedStyle.display = ghostStyle.display;
+            const initialCollisionStyle = this.initialCollisionGhost.element.style;
+            initialCollisionStyle.display = "none";
         }
 
         const bounds = this.element.getBoundingClientRect();
@@ -172,6 +241,7 @@ class Player {
         renderElementBounds(this.bounds);
         renderElementBounds(this.ghost.bounds);
         renderElementBounds(this.collidedGhost.bounds);
+        renderElementBounds(this.initialCollisionGhost.bounds);
     }
 
     render() {
@@ -187,5 +257,8 @@ class Player {
 
         renderElement(this.collidedGhost.element, this.collidedGhost.position);
         this.collidedGhost.bounds.set(Polygon.fromBoundingRect(this.collidedGhost.element.getBoundingClientRect()));
+
+        renderElement(this.initialCollisionGhost.element, this.initialCollisionGhost.position);
+        this.initialCollisionGhost.bounds.set(Polygon.fromBoundingRect(this.initialCollisionGhost.element.getBoundingClientRect()));
     }
 }
