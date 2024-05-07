@@ -72,10 +72,17 @@ class Polygon {
     // Probably want to also consider the sliding velocity, but this might not have
     //  to be a return value, could be another function.
     // RenderCalls is like an optional out variable that you could totally ignore.
+
+    // TODO: The issue is if you nestle right up against the bottom right corner of mound 2 and 3.
+    // Then angle to the left.
+    // We can see from the preview that we first want to push away from the bottom mound (mound 2), which actually
+    //  forces us into mound 3 because we need to have negative displacement to have a large enough GAP away
+    //  from the bottom mound.
+    // Because we then move there before doing the slide move, we glitch into mound 3 and can't get out.
+    // The first thing that comes to mind is having a check if we hit something while trying to maintain GAP.
     calcCollision(polygons, velocity, renderCalls=[], forPrinting=[]) {
         // There is a hacky check for roughly vertical lines, to work with slope math.
-        // This doesn't work for perfectly vertical movement.
-        // TODO: Fix that ^
+        // This needed an added if statement for perfectly vertical movement.
         function slopeSolve(movingPointSeg, side) {
             class Line {
                 constructor(twoPoints) {

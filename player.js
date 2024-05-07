@@ -78,7 +78,38 @@ class Player {
 
         // But don't actually go here, apply collision detection.
         const initialCollision = this.mtmCollision();
-        this.position.set(initialCollision === null ? initialGoHere : initialCollision.gappedPosition);
+        // There are situations where we are less than GAP away from an object, and moving to
+        //  gappedPosition sends us backwards into a different object.
+        /*
+        // Before
+        this.position.set(initialCollision === null ? initialGoHere 
+            : initialCollision.gappedPosition);
+        // End before
+        */
+        if (initialCollision === null) {
+            this.position.set(initialGoHere);
+        } else {
+            // It is possible that going to gappedPosition sends us backward into a different object.
+            // If we then try take that movement and gap away from the different object, we can be sent
+            //  back into the original object.
+            // That's dumb, so instead, it means we are in a corner, and let's just slide out of it.
+            const toIntersection = initialCollision.intersection.minus(initialCollision.point);
+            const collisionPosition = initialCollision.invertedRaycast 
+                ? this.position.minus(toIntersection)
+                : this.position.plus(toIntersection);
+            const gappedVelocity = initialCollision.gappedPosition.minus(collisionPosition);
+            const gappedCollision = this.mtmCollision(gappedVelocity);
+            if (gappedCollision === null) {
+                this.position.set(initialCollision.gappedPosition); 
+            } 
+            // Else, we are stuck in a corner. Do nothing. Perform a slide.
+            /*
+            else {
+                // this.position.set(collisionPosition);
+                // this.position.set(initialCollision.gappedPosition); 
+            }
+            */
+        }
         
         if (initialCollision === null) {
             this.initialCollisionGhost.element.style.display = "none";
@@ -107,7 +138,6 @@ class Player {
         // console.log(finalCollision);
 
         this.position.set(finalCollision === null ? this.position.plus(projectedVelocity) : finalCollision.gappedPosition);
-        // console.log(initialCollision);
     }
 
     relativeCenter() {
