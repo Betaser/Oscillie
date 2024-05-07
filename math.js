@@ -323,8 +323,9 @@ class Polygon {
         return closestCollision;
     }
 
+    // This is in the direction of velocity, possibly including going backwards.
     // FLOAT_DIST = 15 by default.
-    calcFloatingDisplacement(collision, floatDist=FLOAT_DIST) {
+    calcFloatingDisplacementAlongVelocity(collision, floatDist=FLOAT_DIST) {
         const intersection = collision.intersection;
         const toIntersection = intersection.minus(collision.point);
         
@@ -341,6 +342,13 @@ class Polygon {
         // We want the opposite side of SOH
         const hypotenuse = floatDist / sinTheta;
         return toIntersection.normalized().scaled(hypotenuse).negated();
+    }
+
+    calcFloatingDisplacement(collision, floatDist=FLOAT_DIST) {
+        const intersection = collision.intersection;
+        const toIntersection = intersection.minus(collision.point);
+        const floatingDisplacement = toIntersection.normalized().scaled(7);
+        return floatingDisplacement.negated();
     }
 
     getSides() {
