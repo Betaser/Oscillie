@@ -1,5 +1,6 @@
 // This is literally just shorthand for PlayerInputsController.DebugCollision.
 let renderCollision = false;
+let debugPhysics = false;
 
 class Player {
     // element is like document.getElementsByClassName("...")[0]
@@ -9,6 +10,7 @@ class Player {
         this.position ??= Vector2.fromBoundingRect(this.element.getBoundingClientRect());
         this.bounds = Polygon.fromBoundingRect(this.element.getBoundingClientRect());
         this.bounds = this.bounds.clone();
+        this.onGround = false;
 
         this.velocity = new Vector2(0, 0);
 
@@ -30,15 +32,6 @@ class Player {
 
         // For dirty rendering tests.
         this.renderCalls = [];
-    }
-
-    updateVelocity() {
-        if (PlayerInputsController.MoveRight) {
-            this.velocity.x += 1;
-        }
-        if (PlayerInputsController.MoveLeft) {
-            this.velocity.x -= 1;
-        }
     }
 
     mtmCollision(cursorVelocity = this.calcVelocity()) {
@@ -67,9 +60,59 @@ class Player {
         const gappedPosition = collision.invertedRaycast 
             ? this.position.minus(toIntersection)
             : this.position.plus(toIntersection);
-        collision["gappedPosition"] = gappedPosition;
+        collision.gappedPosition = gappedPosition;
+        // collision["gappedPosition"] = gappedPosition;
 
         return collision;
+    }
+
+    calcCollision() {
+        const initialCollision = this.mtmCollision(this.velocity);
+
+        if (initialCollision === null) {
+            this.position.add(this.velocity);
+            return;
+        }
+
+        const side = initialCollision.side[1].minus(initialCollision.side[0]);
+
+        // if the side is the bottom
+        if (initialCollision.invertedRaycast) {
+        } else {
+            // say all floors are the 3rd side of every mound.
+            for (const entity of entities) {
+                if (entity.element.className !== "mound") {
+                    continue;
+                }
+                if (entity.bounds === initialCollision.polygonRef) {
+                    console.log(initialCollision.sideIdx);
+                }
+                if (entity.bounds === initialCollision.polygonRef && initialCollision.sideIdx === 0) {
+                    this.onGround = true;
+                }
+            }
+        }
+
+        // do the normal of the collision location type deal.
+        this.velocity.set(this.velocity.projected(side));
+
+        const toIntersection = initialCollision.intersection.minus(initialCollision.point);
+        const collisionPosition = toIntersection.invertedRaycast
+            ? this.position.minus(toIntersection)
+            : this.position.plus(toIntersection);
+        const gappedVelocity = initialCollision.gappedPosition.minus(collisionPosition);
+        const gappedCollision = this.mtmCollision(gappedVelocity);
+        if (gappedCollision === null) {
+            this.position.set(initialCollision.gappedPosition);
+        }
+
+        const nextPosition = this.position.plus(this.velocity);
+        // rememeber, this.position was set to something different given that there was a collision.
+        const restOfVelocity = nextPosition.minus(this.position);
+        const projectedVelocity = restOfVelocity.projected(side);
+
+        const finalCollision = this.mtmCollision(projectedVelocity);
+        this.position.set(finalCollision === null ? this.position.plus(projectedVelocity) : finalCollision.gappedPosition);
     }
 
     moveToMouse() {
@@ -103,12 +146,6 @@ class Player {
                 this.position.set(initialCollision.gappedPosition); 
             } 
             // Else, we are stuck in a corner. Do nothing. Perform a slide.
-            /*
-            else {
-                // this.position.set(collisionPosition);
-                // this.position.set(initialCollision.gappedPosition); 
-            }
-            */
         }
         
         if (initialCollision === null) {
@@ -171,7 +208,7 @@ class Player {
         const intersection = collision.intersection;
         let toIntersection = intersection.minus(collision.point);
         // Build in a gap. It should probably be a small forced value.
-        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision, 15);
+        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision);
         toIntersection = toIntersection.plus(floatingDisplacement);
         const gappedPosition = collision.invertedRaycast 
             ? this.position.minus(toIntersection)
@@ -182,9 +219,11 @@ class Player {
     }
 
     update() {
-        this.updateVelocity();
-        if (PlayerInputsControllerKeyDown.ResetVelocity) {
-            this.velocity.set(new Vector2(0, 0));
+        if (PlayerInputsControllerKeyDown.DebugPhysics) {
+            debugPhysics = !debugPhysics;
+        }
+        if (debugPhysics) {
+            console.log("vel: " + this.velocity);
         }
         
         // Gravity
@@ -202,12 +241,17 @@ class Player {
 
             if (this.position.y > maxY) {
                 this.velocity.y = 0;
-                this.position.y = maxY;
+                this.position.y = maxY + 1;
 
                 this.velocity.x /= 1.2;
+                this.onGround = true;
             }
 
-            this.position.add(this.velocity);
+            // this.position.add(this.velocity);
+
+            if (PlayerInputsControllerKeyDown.ResetVelocity) {
+                this.velocity.set(new Vector2(0, 0));
+            }
         } else {
             // Since this is teleporting, this overrides this.position.
             if (PlayerInputsControllerKeyDown.MoveToMouse) {
@@ -215,7 +259,28 @@ class Player {
             }
         }
 
-        // TODO: Collision detection
+        if (this.onGround) {
+            console.log("onGround.");
+            this.velocity.x /= 1.2;
+        }
+        if (PlayerInputsController.MoveRight) {
+            this.velocity.x += this.onGround ? 1 : 0.1;
+        }
+        if (PlayerInputsController.MoveLeft) {
+            this.velocity.x -= this.onGround ? 1 : 0.1;
+        }
+        if (this.onGround && PlayerInputsController.Jump) {
+            this.velocity.y -= 10;
+        }
+        // since we bounce on polygons with our large GAP, there isn't a perfect solution to this.
+        this.onGround = false;
+
+        if (!renderCollision) {
+            // determines final value for onGround.
+            this.calcCollision();
+        }
+
+        // Collision detection
         // The location the ghost is being set to is a temporary thing, 
         //   until collision detection algorithsm are in testing phase.
         this.renderCalls = [];

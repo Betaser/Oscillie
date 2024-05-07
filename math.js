@@ -1,3 +1,5 @@
+let FLOAT_DIST = 3;
+
 function relativeCenterOf(bounds) {
     return new Vector2(
         (bounds.right - bounds.left) / 2,
@@ -200,11 +202,15 @@ class Polygon {
         }
 
         class Collision {
-            constructor(intersection, point, side, invertedRaycast=false) {
+            constructor(intersection, point, side, invertedRaycast=false, polygonRef, sideIdx) {
                 this.intersection = intersection;
                 this.point = point;
                 this.side = side;
                 this.invertedRaycast = invertedRaycast;
+                // Less for physics.
+                this.polygonRef = polygonRef;
+                this.sideIdx = sideIdx;
+                this.gappedPosition = null;
             }
         }
 
@@ -228,6 +234,7 @@ class Polygon {
             for (const polygon of polygons) {
                 const sides = polygon.getSides();
 
+                let sideIdx = 0;
                 for (const side of sides) {
                     // The most important part of the algorithm is figuring out where,
                     // and if, the side collides with the player.
@@ -235,14 +242,16 @@ class Polygon {
                     const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
                     // const intersection = boundingBoxVerify(rotationMatMethod, movingPointSeg, side);
                     if (intersection === null) {
+                        sideIdx++;
                         continue;
                     }
 
                     const dist = intersection.minus(point).mag();
                     if (dist < collisionDist) {
                         collisionDist = dist;
-                        closestCollision = new Collision(intersection, point, side);
+                        closestCollision = new Collision(intersection, point, side, false, polygon, sideIdx);
                     }
+                    sideIdx++;
                 }
             }
         }
@@ -265,6 +274,7 @@ class Polygon {
 
                 const sides = this.getSides();
 
+                let sideIdx = 0;
                 for (const side of sides) {
                     // The most important part of the algorithm is figuring out where,
                     // and if, the side collides with the player.
@@ -272,14 +282,16 @@ class Polygon {
                     const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
                     // const intersection = boundingBoxVerify(rotationMatMethod, movingPointSeg, side);
                     if (intersection === null) {
+                        sideIdx++;
                         continue;
                     }
 
                     const dist = intersection.minus(point).mag();
                     if (dist < collisionDist) {
                         collisionDist = dist;
-                        closestCollision = new Collision(intersection, point, side, true);
+                        closestCollision = new Collision(intersection, point, side, true, polygon, sideIdx);
                     }
+                    sideIdx++;
                 }
             }
         }
@@ -312,7 +324,7 @@ class Polygon {
     }
 
     // FLOAT_DIST = 15 by default.
-    calcFloatingDisplacement(collision, FLOAT_DIST = 15) {
+    calcFloatingDisplacement(collision, floatDist=FLOAT_DIST) {
         const intersection = collision.intersection;
         const toIntersection = intersection.minus(collision.point);
         
@@ -327,7 +339,7 @@ class Polygon {
         const b = toIntersection;
         const sinTheta = a.crossMag(b) / (a.mag() * b.mag());
         // We want the opposite side of SOH
-        const hypotenuse = FLOAT_DIST / sinTheta;
+        const hypotenuse = floatDist / sinTheta;
         return toIntersection.normalized().scaled(hypotenuse).negated();
     }
 

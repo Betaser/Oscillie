@@ -7,6 +7,7 @@ const PlayerInputs = Object.freeze({
     DebugBounds: ["KeyB"],
     DebugTurnOffGravity: ["KeyG"],
     DebugCollision: ["KeyC"],
+    DebugPhysics: ["KeyP"],
     MoveLeft: ["KeyA"],
     MoveRight: ["KeyD"],
     Reset: ["KeyR", "Backspace"],
@@ -104,6 +105,7 @@ loadEntity(ball);
         [new Vector2(60, 60), new Vector2(10, 10)],
         [new Vector2(70, 62), new Vector2(10, 8)],
         [new Vector2(80, 56), new Vector2(10, 14)],
+        [new Vector2(7, 68), new Vector2(86, 6)],
     ];
     for (const [position, size] of positionsAndSizes) {
         const moundElement = document.createElement("div");
@@ -165,6 +167,7 @@ function update() {
 
 /// DEBUG UI
 let isDebugInfoShown = false;
+
 
 function toggleDebugMode() {
     const debugPanel = getElement("debug-panel");
