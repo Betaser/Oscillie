@@ -70,13 +70,13 @@ function updateInput() {
     }
 
     if (PlayerInputsController.Jump) {
-        console.log("jumpable");
+        // console.log("jumpable");
     }
     if (PlayerInputsController.MoveLeft) {
-        console.log("left");
+        // console.log("left");
     }
     if (PlayerInputsController.MoveRight) {
-        console.log("right");
+        // console.log("right");
     } 
     if (PlayerInputsControllerKeyDown.Reset) {
         console.log("reset");

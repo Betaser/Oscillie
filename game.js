@@ -1,5 +1,7 @@
 const PlayerInputs = Object.freeze({
     Jump: ["KeyW", "Space"],
+    Hop: ["KeyH"],
+    DiveRight: ["KeyU"],
     DebugLeft: ["ArrowLeft"],
     DebugRight: ["ArrowRight"],
     DebugUp: ["ArrowUp"],

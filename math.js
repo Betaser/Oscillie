@@ -1,4 +1,4 @@
-let FLOAT_DIST = 3;
+let GAP_DIST = 3;
 
 function relativeCenterOf(bounds) {
     return new Vector2(
@@ -289,7 +289,7 @@ class Polygon {
                     const dist = intersection.minus(point).mag();
                     if (dist < collisionDist) {
                         collisionDist = dist;
-                        closestCollision = new Collision(intersection, point, side, true, polygon, sideIdx);
+                        closestCollision = new Collision(intersection, point, side, true, this, sideIdx);
                     }
                     sideIdx++;
                 }
@@ -324,8 +324,7 @@ class Polygon {
     }
 
     // This is in the direction of velocity, possibly including going backwards.
-    // FLOAT_DIST = 15 by default.
-    calcFloatingDisplacementAlongVelocity(collision, floatDist=FLOAT_DIST) {
+    calcFloatingDisplacementFancy(collision, gapDist=GAP_DIST) {
         const intersection = collision.intersection;
         const toIntersection = intersection.minus(collision.point);
         
@@ -340,14 +339,24 @@ class Polygon {
         const b = toIntersection;
         const sinTheta = a.crossMag(b) / (a.mag() * b.mag());
         // We want the opposite side of SOH
-        const hypotenuse = floatDist / sinTheta;
-        return toIntersection.normalized().scaled(hypotenuse).negated();
+        const hypotenuse = gapDist / sinTheta;
+        const ret = toIntersection.normalized().scaled(hypotenuse).negated();
+        return ret;
     }
 
-    calcFloatingDisplacement(collision, floatDist=FLOAT_DIST) {
+    // Nice and perp out. BUT we just clip into a wall after popping out from the floor.
+    calcFloatingDisplacement(collision, gapDist=GAP_DIST) {
+        // Use the same push out logic assumptions as in player.
+        const side = collision.side[1].minus(collision.side[0]);
+        // const perpOut = side.flip().negated().normalized().scaled(gapDist);
+        const perpOut = side.perp().negated().normalized().scaled(gapDist);
+        return perpOut;
+    }
+
+    calcFloatingDisplacementNaive(collision, gapDist=GAP_DIST) {
         const intersection = collision.intersection;
         const toIntersection = intersection.minus(collision.point);
-        const floatingDisplacement = toIntersection.normalized().scaled(7);
+        const floatingDisplacement = toIntersection.normalized().scaled(gapDist);
         return floatingDisplacement.negated();
     }
 
@@ -361,6 +370,7 @@ class Polygon {
         return sides;
     }
 
+    // Counter-clockwise.
     static fromBoundingRect(rect) {
         return new Polygon([
             new Vector2(rect.x, rect.y),
@@ -380,6 +390,14 @@ class Vector2 {
     static fromBoundingRect(rect) {
         let vector = new Vector2(rect.x, rect.y);
         return vector;
+    }
+
+    flip() {
+        return new Vector2(this.y, this.x);
+    }
+
+    perp() {
+        return new Vector2(-this.y, this.x);
     }
 
     mag() {
@@ -425,6 +443,10 @@ class Vector2 {
 
     dot(vector2) {
         return this.x * vector2.x + this.y * vector2.y;
+    }
+
+    along(vector2) {
+        return this.dot(vector2) >= 0;
     }
 
     projected(onto) {

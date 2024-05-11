@@ -1,6 +1,7 @@
 // This is literally just shorthand for PlayerInputsController.DebugCollision.
 let renderCollision = false;
 let debugPhysics = false;
+let passedThru = false;
 
 class Player {
     // element is like document.getElementsByClassName("...")[0]
@@ -10,6 +11,10 @@ class Player {
         this.position ??= Vector2.fromBoundingRect(this.element.getBoundingClientRect());
         this.bounds = Polygon.fromBoundingRect(this.element.getBoundingClientRect());
         this.bounds = this.bounds.clone();
+
+        this.acrossInitialGap = new Vector2(0, 0);
+        this.acrossFinalGap = new Vector2(0, 0);
+
         this.onGround = false;
 
         this.velocity = new Vector2(0, 0);
@@ -34,8 +39,7 @@ class Player {
         this.renderCalls = [];
     }
 
-    mtmCollision(cursorVelocity = this.calcVelocity()) {
-        // console.log("cursorVelocity = " + cursorVelocity);
+    mtmCollision(cursorVelocity = this.calcVelocity) {
         const moundBounds = [];
         for (const entity of entities) {
             // if (entity.element !== undefined && 
@@ -55,8 +59,9 @@ class Player {
         const intersection = collision.intersection;
         let toIntersection = intersection.minus(collision.point);
         // Build in a gap. It should probably be a small forced value.
-        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision);
-        toIntersection = toIntersection.plus(floatingDisplacement);
+        const floatingDisplacement = this.bounds.calcFloatingDisplacement(collision, GAP_DIST);
+
+        toIntersection.add(floatingDisplacement);
         const gappedPosition = collision.invertedRaycast 
             ? this.position.minus(toIntersection)
             : this.position.plus(toIntersection);
@@ -67,17 +72,53 @@ class Player {
     }
 
     calcCollision() {
-        const initialCollision = this.mtmCollision(this.velocity);
+        /*
+        maybe you could go from one frame?
+           c2|
+         c1  |
+         ____|
+        to 
+           c1|
+         c2  |
+         ____|
+        in which case, acrossIntialGap and acrossFinalGap should be swapped I guess?
+        */
+
+        // Note this should not activate in the air
+        const velocityWithGapHelp = this.velocity.along(this.acrossInitialGap)
+            ? this.velocity.plus(this.acrossInitialGap)
+            : this.velocity;
+
+        const initialCollision = this.mtmCollision(velocityWithGapHelp);
 
         if (initialCollision === null) {
             this.position.add(this.velocity);
+            this.acrossInitialGap.set(new Vector2(0, 0));
+
             return;
         }
 
-        const side = initialCollision.side[1].minus(initialCollision.side[0]);
+        if (initialCollision.invertedRaycast) {
+            console.log("init invert");
+        }
+
+        const initialSide = initialCollision.side[1].minus(initialCollision.side[0]);
+
+        // To get the acrossInitialGap.
+        this.acrossInitialGap = initialSide.perp()
+                .normalized().scaled(GAP_DIST * 1.2);
+        
+        // console.log(this.acrossInitialGap);
+        if (initialCollision.invertedRaycast) {
+            console.log(initialSide);
+            console.log(this.acrossInitialGap);
+        }
 
         // if the side is the bottom
         if (initialCollision.invertedRaycast) {
+            if (initialCollision.sideIdx === 2)  {
+                this.onGround = true;
+            }
         } else {
             // say all floors are the 3rd side of every mound.
             for (const entity of entities) {
@@ -85,7 +126,7 @@ class Player {
                     continue;
                 }
                 if (entity.bounds === initialCollision.polygonRef) {
-                    console.log(initialCollision.sideIdx);
+                    // console.log(initialCollision.sideIdx);
                 }
                 if (entity.bounds === initialCollision.polygonRef && initialCollision.sideIdx === 0) {
                     this.onGround = true;
@@ -93,26 +134,68 @@ class Player {
             }
         }
 
-        // do the normal of the collision location type deal.
-        this.velocity.set(this.velocity.projected(side));
-
+        // nah, this is trying to detect when gapped is an issue.
+        /*
         const toIntersection = initialCollision.intersection.minus(initialCollision.point);
         const collisionPosition = toIntersection.invertedRaycast
             ? this.position.minus(toIntersection)
             : this.position.plus(toIntersection);
         const gappedVelocity = initialCollision.gappedPosition.minus(collisionPosition);
         const gappedCollision = this.mtmCollision(gappedVelocity);
+
         if (gappedCollision === null) {
             this.position.set(initialCollision.gappedPosition);
         }
+        */
 
-        const nextPosition = this.position.plus(this.velocity);
-        // rememeber, this.position was set to something different given that there was a collision.
-        const restOfVelocity = nextPosition.minus(this.position);
-        const projectedVelocity = restOfVelocity.projected(side);
+        // Above is actually not a bad idea.
 
-        const finalCollision = this.mtmCollision(projectedVelocity);
-        this.position.set(finalCollision === null ? this.position.plus(projectedVelocity) : finalCollision.gappedPosition);
+        // Now do slide collision.
+        this.position.set(initialCollision.gappedPosition);
+        renderElement(this.element, this.position);
+        this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
+
+        // remember, this.position was set to something different given that there was a collision.
+        const projectedVelocity = this.velocity.projected(initialSide);
+        this.velocity.set(projectedVelocity);
+        const projectedVelocityWithGapHelp = projectedVelocity.along(this.acrossFinalGap)
+            ? projectedVelocity.plus(this.acrossFinalGap)
+            : projectedVelocity;
+        
+        const finalCollision = this.mtmCollision(projectedVelocityWithGapHelp);
+
+        if (finalCollision === null) {
+            this.position.add(projectedVelocity);
+            /*
+            if (this.position.y > this.calcMaxY()) {
+                passedThru = true;
+                console.log(this.acrossFinalGap);
+                console.log(this.acrossInitialGap);
+                console.log(initialCollision);
+                console.log(projectedVelocity);
+                console.log(projectedVelocityWithGapHelp);
+                console.log("silly shits gone to fan");
+            }
+            */
+            this.acrossFinalGap.set(new Vector2(0, 0));
+            return;
+        }
+
+        const finalSide = finalCollision.side[1].minus(finalCollision.side[0]);
+
+
+        this.position.set(finalCollision.gappedPosition);
+        // To get the acrossFinalGap.
+        this.acrossFinalGap = finalSide.perp()
+            .normalized().scaled(GAP_DIST * 1.2);
+
+        /*
+        if (finalCollision.invertedRaycast) {
+            console.log("final invert");
+            console.log(finalSide);
+            console.log(this.acrossFinalGap);
+        }
+        */
     }
 
     moveToMouse() {
@@ -219,6 +302,9 @@ class Player {
     }
 
     update() {
+        if (passedThru) {
+            return;
+        }
         if (PlayerInputsControllerKeyDown.DebugPhysics) {
             debugPhysics = !debugPhysics;
         }
@@ -237,7 +323,7 @@ class Player {
             const ground = getElement("ground");
             const groundLevel = ground.getBoundingClientRect().top;
             const playerHeight = this.element.getBoundingClientRect().height;
-            const maxY = groundLevel - playerHeight - 10;
+            const maxY = groundLevel - playerHeight - 6;
 
             if (this.position.y > maxY) {
                 this.velocity.y = 0;
@@ -245,6 +331,7 @@ class Player {
 
                 this.velocity.x /= 1.2;
                 this.onGround = true;
+                // console.log("aboveMaxY");
             }
 
             // this.position.add(this.velocity);
@@ -260,7 +347,7 @@ class Player {
         }
 
         if (this.onGround) {
-            console.log("onGround.");
+            // console.log("onGround.");
             this.velocity.x /= 1.2;
         }
         if (PlayerInputsController.MoveRight) {
@@ -272,15 +359,22 @@ class Player {
         if (this.onGround && PlayerInputsController.Jump) {
             this.velocity.y -= 10;
         }
+        if (this.onGround && PlayerInputsControllerKeyDown.Hop) {
+            this.velocity.y -= 3;
+        }
+        if (PlayerInputsControllerKeyDown.DiveRight) {
+            this.velocity.y += 4;
+            this.velocity.x += 4;
+        }
         // since we bounce on polygons with our large GAP, there isn't a perfect solution to this.
         this.onGround = false;
 
         if (!renderCollision) {
             // determines final value for onGround.
             this.calcCollision();
+            return;
         }
 
-        // Collision detection
         // The location the ghost is being set to is a temporary thing, 
         //   until collision detection algorithsm are in testing phase.
         this.renderCalls = [];
@@ -314,6 +408,14 @@ class Player {
                 });
             }
         }
+    }
+
+    calcMaxY() {
+        const ground = getElement("ground");
+        const groundLevel = ground.getBoundingClientRect().top;
+        const playerHeight = this.element.getBoundingClientRect().height;
+        const maxY = groundLevel - playerHeight - 6;
+        return maxY;
     }
 
     setGhost() {
