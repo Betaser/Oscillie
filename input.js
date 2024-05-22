@@ -2,7 +2,7 @@
 let mouseX = 0;
 let mouseY = 0;
 let mousePosition = new Vector2(mouseX, mouseY);
-onmousemove = (e) => {
+onmousemove = e => {
     mouseX = e.clientX;
     mouseY = e.clientY;
     mousePosition.x = mouseX;
@@ -27,11 +27,11 @@ function updateInputs(e, eventInfoToCheck = "code", keyDown = true) {
     }
 }
 
-onmouseup = (e) => {
+onmouseup = e => {
     updateInputs(e, "button", false);
-}
+};
 
-onmousedown = (e) => {
+onmousedown = e => {
     updateInputs(e, "button", true);
 };
 
@@ -43,11 +43,11 @@ function setupTips() {
 }
 
 function setupInput() {
-    document.addEventListener("keyup", (e) => {
+    document.addEventListener("keyup", e => {
         updateInputs(e, "code", false);
     });
 
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener("keydown", e => {
         updateInputs(e, "code", true);
     });
     // I can do document.addEventListener "click", but it's annoying that it will only activate on clicks,

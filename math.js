@@ -83,6 +83,34 @@ class Polygon {
     // Because we then move there before doing the slide move, we glitch into mound 3 and can't get out.
     // The first thing that comes to mind is having a check if we hit something while trying to maintain GAP.
     calcCollision(polygons, velocity, renderCalls=[], forPrinting=[]) {
+        // clean linear algebra method of solving it
+        function axb(movingPointSeg, side) {
+            // Suppose movingPointSeg is line 1, just because.
+            const l1 = movingPointSeg;
+            const l2 = side;
+            // etc...
+            const dx1 = l1[1].x - l1[0].x;
+            const dy1 = l1[1].y - l1[0].y;
+            const ARow1 = [
+                dx1, l2[0].x - l2[1].x
+                // row 2 of A: 
+                // [ l1[1].y - l1[0].y, -(l2[1].y - l2[1].y) ]
+            ];
+            const b = [ l2[0].x - l1[0].x, l2[0].y - l1[0].y ];
+            // We only need to calculate the parameteric t variable for line1, 
+            //  which'll be only the first element of A^-1 * b.
+            /*
+            IF
+            A = [[a b]  b = [x
+                 [c d]]      y]
+            Then Ab's first element is equal to ax + by.
+            */
+           const t1 = ARow1[0] * b[0] + ARow1[1] * b[1];
+           const x = dx1 * t1 + l1[0].x;
+           const y = dy1 * t1 + l1[0].y;
+           return new Vector2(x, y);
+        }
+
         // There is a hacky check for roughly vertical lines, to work with slope math.
         // This needed an added if statement for perfectly vertical movement.
         function slopeSolve(movingPointSeg, side) {

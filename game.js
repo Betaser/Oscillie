@@ -238,7 +238,7 @@ function update() {
             elapsedDisplay = now - prevDisplayTime;
             prevDisplayTime = now - (elapsedDisplay % displayFrameInterval);
             const currentFps = 1000 / ( elapsedDisplay / displayFrameInterval);
-            getElement("fps").innerHTML = "FPS: " + currentFps;
+            getElement("fps").innerHTML = "fps: " + currentFps;
         }
     }
 }
