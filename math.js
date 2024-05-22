@@ -92,10 +92,11 @@ class Polygon {
             // etc...
             const dx1 = l1[1].x - l1[0].x;
             const dy1 = l1[1].y - l1[0].y;
-            const ARow1 = [
-                dx1, l2[0].x - l2[1].x
-                // row 2 of A: 
-                // [ l1[1].y - l1[0].y, -(l2[1].y - l2[1].y) ]
+            const ndy2 = l2[0].y - l2[1].y;
+            const det = dx1 * ndy2 - (l2[0].x - l2[1].x) * dy1;
+            const AInvRow1 = [
+                (l2[0].y - l2[1].y) / det, 
+                (l2[1].x - l2[0].x) / det
             ];
             const b = [ l2[0].x - l1[0].x, l2[0].y - l1[0].y ];
             // We only need to calculate the parameteric t variable for line1, 
@@ -106,14 +107,17 @@ class Polygon {
                  [c d]]      y]
             Then Ab's first element is equal to ax + by.
             */
-           const t1 = ARow1[0] * b[0] + ARow1[1] * b[1];
-           const x = dx1 * t1 + l1[0].x;
-           // Should we just use the position of x to move along y?
-           // Of course we can also calculate y, as below.
-           // const y = dy1 * t1 + l1[0].y;
-           // l1[0] is our starting position.
-           const y = l1[0].y + (x - l1[0].x) * dx1 / dy1;
-           return new Vector2(x, y);
+            const t1 = AInvRow1[0] * b[0] + AInvRow1[1] * b[1];
+        
+            const x = dx1 * t1 + l1[0].x;
+            // Should we just use the position of x to move along y?
+            // idk, more division is sucky.
+            const y = dy1 * t1 + l1[0].y;
+            // const y = l1[0].y + (x - l1[0].x) * dy1 / dx1;
+            if (isNaN(x) || isNaN(y)) {
+                console.log("nan result, det is " + det);
+            }
+            return new Vector2(x, y);
         }
 
         // There is a hacky check for roughly vertical lines, to work with slope math.
@@ -190,6 +194,37 @@ class Polygon {
         let collisionDist = Infinity;
         let closestCollision = null;
 
+        function debugAxb(movingPointSeg, side) {
+            function intersect(intersectionFunc, movingPointSeg, sideSeg) {
+                const intersection = intersectionFunc(movingPointSeg, sideSeg);
+                function inBounds(lineSegment) {
+                    const minX = Math.min(lineSegment[0].x, lineSegment[1].x);
+                    const maxX = Math.max(lineSegment[0].x, lineSegment[1].x);
+                    const minY = Math.min(lineSegment[0].y, lineSegment[1].y);
+                    const maxY = Math.max(lineSegment[0].y, lineSegment[1].y);
+                    return (minX <= intersection.x && intersection.x <= maxX)
+                        && (minY <= intersection.y && intersection.y <= maxY);
+                }
+
+                forPrinting.push(`${intersection.toString()} movingPointSeg: ${movingPointSeg} sideSeg ${sideSeg}`);
+
+                return [intersection, (inBounds(movingPointSeg) && inBounds(sideSeg))];
+            }
+
+            const intersection = intersect(slopeSolve, movingPointSeg, side);
+            const axbIntersection = intersect(axb, movingPointSeg, side);
+            if (!axbIntersection[1] && intersection[1]) {
+                console.log("slope says there is an intersection at " + intersection[0] + " axb says at " + axbIntersection[0]);
+            } else if (axbIntersection[1] && !intersection[1]) {
+                console.log("slope says there is no intersection at " + intersection[0] + " axb says at " + axbIntersection[0]);
+            } else if (axbIntersection[1] && intersection[1]) {
+                const diff = intersection[0].minus(axbIntersection[0]);
+                if (diff.mag() > 0.1) {
+                    console.log("diff is " + intersection[0].minus(axbIntersection));
+                }
+            }
+        }
+
         for (const point of this.points) {
             const movingPointSeg = [point, point.plus(velocity)];
             renderCalls.push(() => {
@@ -213,7 +248,8 @@ class Polygon {
                     // and if, the side collides with the player.
                     // SWITCHING OUT
                     const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
-                    // const intersection = boundingBoxVerify(rotationMatMethod, movingPointSeg, side);
+                    const axbIntersection = boundingBoxVerify(axb, movingPointSeg, side);
+                    debugAxb(movingPointSeg, side);
                     if (intersection === null) {
                         sideIdx++;
                         continue;
@@ -253,7 +289,8 @@ class Polygon {
                     // and if, the side collides with the player.
                     // SWITCHING OUT
                     const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
-                    // const intersection = boundingBoxVerify(rotationMatMethod, movingPointSeg, side);
+                    const axbIntersection = boundingBoxVerify(axb, movingPointSeg, side);
+                    debugAxb(movingPointSeg, side);
                     if (intersection === null) {
                         sideIdx++;
                         continue;

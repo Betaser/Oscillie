@@ -99,7 +99,7 @@ class Player {
         }
 
         if (initialCollision.invertedRaycast) {
-            console.log("init invert");
+            // console.log("init invert");
         }
 
         const initialSide = initialCollision.side[1].minus(initialCollision.side[0]);
@@ -110,8 +110,8 @@ class Player {
         
         // console.log(this.acrossInitialGap);
         if (initialCollision.invertedRaycast) {
-            console.log(initialSide);
-            console.log(this.acrossInitialGap);
+            // console.log(initialSide);
+            // console.log(this.acrossInitialGap);
         }
 
         // if the side is the bottom
