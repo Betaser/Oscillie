@@ -84,6 +84,7 @@ class Polygon {
     // The first thing that comes to mind is having a check if we hit something while trying to maintain GAP.
     calcCollision(polygons, velocity, renderCalls=[], forPrinting=[]) {
         // clean linear algebra method of solving it
+        // but what happens if the line segments do not intersect?
         function axb(movingPointSeg, side) {
             // Suppose movingPointSeg is line 1, just because.
             const l1 = movingPointSeg;
@@ -107,7 +108,11 @@ class Polygon {
             */
            const t1 = ARow1[0] * b[0] + ARow1[1] * b[1];
            const x = dx1 * t1 + l1[0].x;
-           const y = dy1 * t1 + l1[0].y;
+           // Should we just use the position of x to move along y?
+           // Of course we can also calculate y, as below.
+           // const y = dy1 * t1 + l1[0].y;
+           // l1[0] is our starting position.
+           const y = l1[0].y + (x - l1[0].x) * dx1 / dy1;
            return new Vector2(x, y);
         }
 
@@ -148,66 +153,6 @@ class Polygon {
             const y = sideLine.m * x + sideLine.b;
 
             return new Vector2(x, y);
-        }
-
-        // This just doesn't work a lot of the time.
-        function rotationMatMethod(movingPointSeg, sideSeg) {
-            class Line {
-                constructor(twoPoints) {
-                    const [p1, p2] = twoPoints;
-                    this.m = (p2.y - p1.y) / (p2.x - p1.x);
-                    this.b = p1.y - this.m * p1.x;
-                }
-            }
-
-            // blah blah todo. copy from the C++ stuff.
-            const dx1 = movingPointSeg[0].x - movingPointSeg[1].x;
-            const dy1 = movingPointSeg[0].y - movingPointSeg[1].y;
-            const dx2 = sideSeg[0].x - sideSeg[1].x;
-            const dy2 = sideSeg[0].y - sideSeg[1].y;
-
-            const VERT_ENOUGH = 2;
-            function rotateLine(line, mat) {
-                const pt1 = applyRotation(line[0], mat);
-                const pt2 = applyRotation(line[1], mat);
-                return [ pt1, pt2 ];
-            }
-
-            // Edge case is when both lines are very far away from vertical.
-            const bothLinesOk = (dx1 === 0 || dx2 === 0) ? true : !(Math.abs(dy1 / dx1) < VERT_ENOUGH && Math.abs(dy2 / dx2) < VERT_ENOUGH);
-            let mat, invMat;
-
-            if (bothLinesOk) {
-                // cross multiplication comparison of the slopes.
-                if (Math.abs(dy1 * dx2) > Math.abs(dx1 * dy2)) {
-                    if (dx2 < 0) {
-                        mat = PI_OVER_4_MAT;
-                        invMat = NEG_PI_OVER_4_MAT;
-                    } else {
-                        mat = NEG_PI_OVER_4_MAT;
-                        invMat = PI_OVER_4_MAT;
-                    }
-                } else {
-                    if (dx1 < 0) {
-                        mat = PI_OVER_4_MAT;
-                        invMat = NEG_PI_OVER_4_MAT;
-                    } else {
-                        mat = NEG_PI_OVER_4_MAT;
-                        invMat = PI_OVER_4_MAT;
-                    }
-                }
-
-                movingPointSeg = rotateLine(movingPointSeg, mat);
-                sideSeg = rotateLine(sideSeg, mat);
-            }
-
-            const movingPointLine = new Line(movingPointSeg);
-            const sideLine = new Line(sideSeg);
-
-            const x = (movingPointLine.b - sideLine.b) / (sideLine.m - movingPointLine.m);
-            const y = sideLine.m * x + sideLine.b;
-            // We don't handle perfectly parallel stuff yet.
-            return bothLinesOk ? applyRotation(new Vector2(x, y), invMat) : new Vector2(x, y);
         }
 
         function boundingBoxVerify(intersectionFunc, movingPointSeg, sideSeg) {
