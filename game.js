@@ -110,13 +110,34 @@ loadEntity(ball);
         [new Vector2(7, 68), new Vector2(86, 6)],
     ];
     for (const [position, size] of positionsAndSizes) {
-        const moundElement = document.createElement("div");
-        moundElement.className = "mound";
         const mound = Mound.MakeDiv(position, size);
         // Mound calls document.body.appendChild so that it can get its own boundingClientRect in its constructor
         addEntity(mound);
     }
     // Create a triangle mound, why not.
+}
+// Create a slope
+{
+    const element = document.createElement("div");
+    element.className = "slope";
+    const boundingBox = new Vector2(15, 30);
+    const position = new Vector2(30, 40);
+    renderElementSize(element, boundingBox, "v");
+    renderElement(element, position, "v");
+    document.body.appendChild(element);
+
+    // a right triangle facing right.
+    const unscale100 = new Vector2(0.01, 0.01);
+    const trueBounds = screenSize().multV(boundingBox).multV(unscale100);
+    const truePosition = screenSize().multV(position).multV(unscale100);
+    // Make SURE we make the points CW.
+    const slopeBounds = new Polygon([
+        truePosition,
+        truePosition.plus(trueBounds),
+        truePosition.plus(new Vector2(0, trueBounds.y)),
+    ]);
+
+    addEntity(new EntityWithBounds(element, position, slopeBounds));
 }
 
 /// UPDATE LOOP
@@ -205,8 +226,13 @@ function appendDebugList(list) {
         mutateItem(item);
         list.appendChild(item);
     }
-    addItem((item) => item.innerHTML = "Render Collision (Click C) : " + renderCollision);
-    addItem((item) => item.innerHTML = "Gravity (Click G) : " + (!PlayerInputsController.DebugTurnOffGravity && !renderCollision));
+    addItem(item => item.innerHTML = "Render Collision (Click C) : " + renderCollision);
+    addItem(item => item.innerHTML = "Gravity (Click G) : " + (!PlayerInputsController.DebugTurnOffGravity && !renderCollision));
+}
+
+function screenSize() {
+    const screenRectangle = document.getElementById("screen-rect").getBoundingClientRect();
+    return new Vector2(screenRectangle.width, screenRectangle.height);
 }
 
 function update() {

@@ -1,6 +1,7 @@
 // This is literally just shorthand for PlayerInputsController.DebugCollision.
 let renderCollision = false;
-let passedThru = false;
+let offGroundData = [];
+let offGround = 0;
 
 class Player {
     // element is like document.getElementsByClassName("...")[0]
@@ -15,6 +16,7 @@ class Player {
         this.acrossFinalGap = new Vector2(0, 0);
 
         this.onGround = false;
+        this.prevOnGround = false;
 
         this.velocity = new Vector2(0, 0);
 
@@ -32,8 +34,9 @@ class Player {
     mtmCollision(cursorVelocity) {
         const moundBounds = [];
         for (const entity of entities) {
-            if (entity.element.className === "mound") {
-                // mounds have bounds.
+            if (["mound", "slope"]
+                .includes(entity.element.className)) {
+                // these have bounds.
                 moundBounds.push(entity.bounds);
             }
         }
@@ -66,16 +69,44 @@ class Player {
             ? this.velocity.plus(this.acrossInitialGap)
             : this.velocity;
 
-        const initialCollision = this.mtmCollision(velocityWithGapHelp);
+        /*
+        const velocityWithGapHelp = this.velocity.along(this.acrossInitialGap)
+            ? this.acrossInitialGap
+            : this.velocity;
+        */
+        // const initialCollision = this.mtmCollision(velocityWithGapHelp);
+
+        // not sure why this should be done but it does
+        const stickyVelocity = this.velocity.along(this.acrossInitialGap)
+            ? this.acrossInitialGap
+            : this.velocity;
+
+        let stickyCollision = this.mtmCollision(stickyVelocity);
+
+        let summedCollision = this.mtmCollision(velocityWithGapHelp);
+        let initialCollision = undefined;
+        if (stickyCollision !== null) {
+            initialCollision = stickyCollision;
+        } else if (summedCollision !== null) {
+            initialCollision = summedCollision;
+        } else {
+            initialCollision = null;
+        }
 
         if (initialCollision === null) {
             this.position.add(this.velocity);
             this.acrossInitialGap.set(new Vector2(0, 0));
+            this.acrossFinalGap.set(new Vector2(0, 0));
 
             return;
         }
 
         const initialSide = initialCollision.side[1].minus(initialCollision.side[0]);
+
+        // Imagine we are in a corner. Say we were moving along the floor. Then the this.acrossInitialGap was perp up from the floor.
+        // But now, it gets set to perp out from the wall. We float above the floor, but we keep colliding with the wall.
+        // Our low gravity makes it so we take a long time to overcome that gap of 3, since the gravity is 0.25. So it takes like 14 frames to get back to the ground, weird.
+        // So that's something to consider. But in reality, onGround should be a downwards raycast anyways probably, which would alleviate this issue.
 
         // To get the acrossInitialGap.
         this.acrossInitialGap = initialSide.perp().normalized().scaled(GAP_DIST * 1.2);
@@ -84,26 +115,32 @@ class Player {
 
         // if the side is the bottom
         if (initialCollision.invertedRaycast) {
+            // for now say any thing with which we are on top of is jump off able.
             if (initialCollision.sideIdx === 2)  {
                 this.onGround = true;
             }
         } else {
             // say all floors are the 3rd side of every mound.
             for (const entity of entities) {
-                if (entity.element.className !== "mound") {
-                    continue;
-                }
-                if (entity.bounds === initialCollision.polygonRef) {
-                    // console.log(initialCollision.sideIdx);
-                }
-                if (entity.bounds === initialCollision.polygonRef && initialCollision.sideIdx === 0) {
-                    this.onGround = true;
+                switch (entity.element.className) {
+                    case "mound": 
+                        if (entity.bounds === initialCollision.polygonRef && initialCollision.sideIdx === 0) {
+                            this.onGround = true;
+                        }
+                        break;
+                    case "slope":
+                        if (entity.bounds === initialCollision.polygonRef && initialCollision.sideIdx === 0) {
+                            this.onGround = true;
+                        }
+                        break;
                 }
             }
         }
 
         // Now do slide collision.
+        // this is the issue
         this.position.set(initialCollision.gappedPosition);
+
         // renderElement(this.element, this.position);
         // this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
         this.bounds.moveTo(this.initialBoundsPosition, this.position)
@@ -118,13 +155,12 @@ class Player {
         const finalCollision = this.mtmCollision(projectedVelocityWithGapHelp);
 
         if (finalCollision === null) {
-            this.position.add(projectedVelocity);
+            this.position.add(this.velocity);
             this.acrossFinalGap.set(new Vector2(0, 0));
             return;
         }
 
         const finalSide = finalCollision.side[1].minus(finalCollision.side[0]);
-
 
         this.position.set(finalCollision.gappedPosition);
         // To get the acrossFinalGap.
@@ -138,10 +174,6 @@ class Player {
     } 
 
     update() {
-        if (passedThru) {
-            return;
-        }
-        
         // Gravity
         if (!PlayerInputsController.DebugTurnOffGravity && !renderCollision) {
             this.velocity.add(new Vector2(0, 0.25));
@@ -161,7 +193,6 @@ class Player {
 
                 this.velocity.x /= 1.2;
                 this.onGround = true;
-                // console.log("aboveMaxY");
             }
 
             if (PlayerInputsControllerKeyDown.ResetVelocity) {
@@ -173,6 +204,21 @@ class Player {
                 console.log("try to move to mouse, but that debugging doesn't seem useful");
             }
         }
+
+        // TESTING
+        /*
+        if (this.onGround) {
+            if (offGround > 0) {
+                console.log("positions");
+                console.log(offGroundData);
+                offGroundData = [];
+                offGround = 0;
+            }
+        } else {
+            offGround++;
+            offGroundData.push(this.position.clone());
+        }
+        */
 
         // On a ground surface.
         if (this.onGround) {
@@ -194,7 +240,9 @@ class Player {
             this.velocity.y += 4;
             this.velocity.x += 4;
         }
-        // since we bounce on polygons with our large GAP, there isn't a perfect solution to this.
+
+        this.prevOnGround = this.onGround;
+
         this.onGround = false;
 
         if (!renderCollision) {

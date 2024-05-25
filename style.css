@@ -77,6 +77,13 @@ body {
     height: 10vh;
 }
 
+.slope {
+    position: absolute;
+    background-color: pink;
+    width: 10vw;
+    height: 10vh;
+}
+
 .layer {
     position: absolute;
     left: 0px;

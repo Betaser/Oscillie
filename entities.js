@@ -40,3 +40,18 @@ class Entity {
         this.bounds = bounds;
     }
 }
+
+class EntityWithBounds extends Entity {
+    constructor(element, position, bounds) {
+        super(element, position, bounds);
+    }
+
+    update() {}
+    render() {
+        renderElement(this.element, this.position, "v");
+    }
+
+    renderBounds() {
+        renderElementBounds(this.bounds);
+    }
+}

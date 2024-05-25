@@ -1,4 +1,5 @@
 let GAP_DIST = 3;
+let ALONG_THRESHOLD_PROPORTION = 0.01;
 
 function relativeCenterOf(bounds) {
     return new Vector2(
@@ -264,7 +265,7 @@ class Polygon {
                     // SWITCHING OUT
                     // const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
                     const intersection = boundingBoxVerify(axb, movingPointSeg, side);
-                    debugAxb(movingPointSeg, side);
+                    // debugAxb(movingPointSeg, side);
                     if (intersection === null) {
                         sideIdx++;
                         continue;
@@ -305,7 +306,7 @@ class Polygon {
                     // SWITCHING OUT
                     // const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
                     const intersection = boundingBoxVerify(axb, movingPointSeg, side);
-                    debugAxb(movingPointSeg, side);
+                    // debugAxb(movingPointSeg, side);
                     if (intersection === null) {
                         sideIdx++;
                         continue;
@@ -369,7 +370,7 @@ class Polygon {
         return ret;
     }
 
-    // Nice and perp out. BUT we just clip into a wall after popping out from the floor.
+    // Nice and perp out.
     calcFloatingDisplacement(collision, gapDist=GAP_DIST) {
         // Use the same push out logic assumptions as in player.
         const side = collision.side[1].minus(collision.side[0]);
@@ -466,12 +467,18 @@ class Vector2 {
         return Math.abs(this.x * vector2.y - this.y * vector2.x);
     }
 
+    multV(vector2) {
+        return new Vector2(this.x * vector2.x, this.y * vector2.y);
+    }
+
     dot(vector2) {
         return this.x * vector2.x + this.y * vector2.y;
     }
 
-    along(vector2) {
-        return this.dot(vector2) >= 0;
+    // use threshold for percent "along" each othr.
+    along(vector2, threshold = ALONG_THRESHOLD_PROPORTION) {
+        const perfectlyAlong = this.mag() * vector2.mag();
+        return this.dot(vector2) / perfectlyAlong >= threshold;
     }
 
     projected(onto) {
