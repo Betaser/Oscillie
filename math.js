@@ -42,6 +42,18 @@ class Polygon {
         }
     }
 
+    moveTo(initialPosition, newPosition) {
+        // unshift to 0,0 plus the initial position.
+        this.shift(this.points[0].negated()
+            .plus(initialPosition).plus(newPosition));
+    }
+
+    shift(by) {
+        for (let point of this.points) {
+            point.add(by);
+        }
+    }
+
     clone() {
         let polygon = new Polygon();
         polygon.set(this);
@@ -94,6 +106,12 @@ class Polygon {
             const dy1 = l1[1].y - l1[0].y;
             const ndy2 = l2[0].y - l2[1].y;
             const det = dx1 * ndy2 - (l2[0].x - l2[1].x) * dy1;
+            // if things are parallel, the determinant is 0? 
+            // hacky but it just guarantees the bounding box verify will fail
+            if (det === 0) {
+                return new Vector2(Infinity, Infinity);
+            }
+            // what do we do when the determinant is 0?
             const AInvRow1 = [
                 (l2[0].y - l2[1].y) / det, 
                 (l2[1].x - l2[0].x) / det
@@ -114,9 +132,6 @@ class Polygon {
             // idk, more division is sucky.
             const y = dy1 * t1 + l1[0].y;
             // const y = l1[0].y + (x - l1[0].x) * dy1 / dx1;
-            if (isNaN(x) || isNaN(y)) {
-                console.log("nan result, det is " + det);
-            }
             return new Vector2(x, y);
         }
 
@@ -247,8 +262,8 @@ class Polygon {
                     // The most important part of the algorithm is figuring out where,
                     // and if, the side collides with the player.
                     // SWITCHING OUT
-                    const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
-                    const axbIntersection = boundingBoxVerify(axb, movingPointSeg, side);
+                    // const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
+                    const intersection = boundingBoxVerify(axb, movingPointSeg, side);
                     debugAxb(movingPointSeg, side);
                     if (intersection === null) {
                         sideIdx++;
@@ -288,8 +303,8 @@ class Polygon {
                     // The most important part of the algorithm is figuring out where,
                     // and if, the side collides with the player.
                     // SWITCHING OUT
-                    const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
-                    const axbIntersection = boundingBoxVerify(axb, movingPointSeg, side);
+                    // const intersection = boundingBoxVerify(slopeSolve, movingPointSeg, side);
+                    const intersection = boundingBoxVerify(axb, movingPointSeg, side);
                     debugAxb(movingPointSeg, side);
                     if (intersection === null) {
                         sideIdx++;

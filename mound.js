@@ -26,7 +26,7 @@ class Mound {
     renderBounds() {
         renderElementBounds(this.bounds);
 
-        this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
+        // this.bounds.set(Polygon.fromBoundingRect(this.element.getBoundingClientRect()));
     }
 
 }

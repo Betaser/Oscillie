@@ -38,6 +38,7 @@ console.log(
     (checkBounds(case3, movingPointSeg3, sideSeg3) ? "in bounds " : "not in bounds ")
     + case3);
 
+// maybe bad.
 function checkBounds(intersection, movingPointSeg, sideSeg) {
     function inBounds(lineSegment) {
         const minX = Math.min(lineSegment[0].x, lineSegment[1].x);
