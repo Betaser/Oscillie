@@ -82,9 +82,9 @@ class Player {
             : this.velocity;
 
         let stickyCollision = this.mtmCollision(stickyVelocity);
-
         let summedCollision = this.mtmCollision(velocityWithGapHelp);
         let initialCollision = undefined;
+
         if (stickyCollision !== null) {
             initialCollision = stickyCollision;
         } else if (summedCollision !== null) {

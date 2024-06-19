@@ -139,6 +139,29 @@ loadEntity(ball);
 
     addEntity(new EntityWithBounds(element, position, slopeBounds));
 }
+// Create a downwards facing slope on the right
+{
+    const element = document.createElement("div");
+    element.className = "slope";
+    const boundingBox = new Vector2(15, 60);
+    const position = new Vector2(80, 10);
+    renderElementSize(element, boundingBox, "v");
+    renderElement(element, position, "v");
+    document.body.appendChild(element);
+
+    // a right triangle facing right.
+    const unscale100 = new Vector2(0.01, 0.01);
+    const trueBounds = screenSize().multV(boundingBox).multV(unscale100);
+    const truePosition = screenSize().multV(position).multV(unscale100);
+    // Make SURE we make the points CW.
+    const slopeBounds = new Polygon([
+        truePosition,
+        truePosition.plus(new Vector2(trueBounds.x, 0)),
+        truePosition.plus(trueBounds),
+    ]);
+
+    addEntity(new EntityWithBounds(element, position, slopeBounds));
+}
 
 /// UPDATE LOOP
 let frames = 0;
